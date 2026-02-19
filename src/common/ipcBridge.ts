@@ -419,7 +419,7 @@ export interface ICreateConversationParams {
     presetAssistantId?: string;
     /** Initial session mode selected on Guid page (from AgentModeSelector) */
     sessionMode?: string;
-    /** Gateway config overrides for OpenClaw (host, port, url, useExternalGateway, etc.) */
+    /** Gateway config overrides for OpenClaw */
     gateway?: {
       mode?: 'local' | 'remote';
       host?: string;
@@ -427,7 +427,6 @@ export interface ICreateConversationParams {
       url?: string;
       token?: string;
       password?: string;
-      useExternalGateway?: boolean;
     };
     /** Runtime validation snapshot used for post-switch strong checks (OpenClaw) */
     runtimeValidation?: {

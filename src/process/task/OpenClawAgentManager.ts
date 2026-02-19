@@ -27,7 +27,6 @@ export interface OpenClawAgentManagerData {
     port?: number;
     token?: string;
     password?: string;
-    useExternalGateway?: boolean;
     cliPath?: string;
   };
   /** Session key for resume */

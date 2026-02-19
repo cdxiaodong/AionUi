@@ -217,7 +217,6 @@ export type TChatConversation =
             port?: number;
             token?: string;
             password?: string;
-            useExternalGateway?: boolean;
             cliPath?: string;
           };
           /** Session key for resume */

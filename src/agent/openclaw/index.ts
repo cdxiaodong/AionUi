@@ -113,7 +113,7 @@ export class OpenClawAgent {
       // Determine whether to use an external gateway:
       // explicit flag > mode-driven > auto-infer from url or remote host presence
       const isRemoteHost = host !== 'localhost' && host !== '127.0.0.1';
-      const useExternal = gatewayConfig.useExternalGateway ?? (effectiveMode === 'remote' || !!gatewayConfig.url || isRemoteHost);
+      const useExternal = effectiveMode === 'remote' || !!gatewayConfig.url || isRemoteHost;
 
       // Resolve WebSocket URL: when external, prefer UI url > file config url > host:port;
       // when local, always connect to host:port
