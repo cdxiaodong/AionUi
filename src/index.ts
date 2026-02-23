@@ -169,6 +169,7 @@ const resolveRemoteAccess = (config: WebUIUserConfig): boolean => {
 const isWebUIMode = hasSwitch('webui');
 const isRemoteMode = hasSwitch('remote');
 const isResetPasswordMode = hasCommand('--resetpass');
+const isLinuxNoDisplay = process.platform === 'linux' && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY;
 
 let mainWindow: BrowserWindow;
 
@@ -287,7 +288,13 @@ const handleAppReady = async (): Promise<void> => {
     } catch (error) {
       app.exit(1);
     }
-  } else if (isWebUIMode) {
+  } else if (isWebUIMode || isLinuxNoDisplay) {
+    // Auto-switch to WebUI mode on Linux without a display server
+    // 在无显示服务器的 Linux 上自动降级为 WebUI 模式
+    if (isLinuxNoDisplay && !isWebUIMode) {
+      console.log('[App] No display detected on Linux. Auto-switching to WebUI mode.');
+      console.log('[App] Tip: Use --webui flag to start in WebUI mode explicitly.');
+    }
     const userConfigInfo = loadUserWebUIConfig();
     if (userConfigInfo.exists && userConfigInfo.path) {
       // Config file loaded from user directory
