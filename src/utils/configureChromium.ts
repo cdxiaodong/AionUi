@@ -22,6 +22,10 @@ if (isLinuxNoDisplay) {
   app.commandLine.appendSwitch('headless');
   app.commandLine.appendSwitch('disable-gpu');
   app.commandLine.appendSwitch('disable-software-rasterizer');
+  // Prevent GPU sandbox init failure (error_code=1002) on servers without user namespaces
+  app.commandLine.appendSwitch('no-sandbox');
+  // Prevent network service crash caused by insufficient /dev/shm in container environments
+  app.commandLine.appendSwitch('disable-dev-shm-usage');
 }
 
 // For WebUI and --resetpass modes: disable sandbox for root user
