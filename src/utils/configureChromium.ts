@@ -18,9 +18,12 @@ const isLinuxNoDisplay = process.platform === 'linux' && !process.env.DISPLAY &&
 
 // All Linux: prevent GPU sandbox init failure (error_code=1002) on VMs, containers, and
 // systems with restricted namespaces — applies regardless of display server availability
+// --no-zygote: disable Zygote PID namespace to fix ESRCH shared memory errors
+//   (Zygote uses clone(CLONE_NEWPID) which causes cross-namespace /tmp IPC failures)
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('no-sandbox');
   app.commandLine.appendSwitch('disable-dev-shm-usage');
+  app.commandLine.appendSwitch('no-zygote');
 }
 
 // Linux no-display: enable headless mode to prevent segfault when no display server is present
