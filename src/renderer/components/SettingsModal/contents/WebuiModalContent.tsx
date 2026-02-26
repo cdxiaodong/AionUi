@@ -586,10 +586,7 @@ const WebuiModalContent: React.FC = () => {
               description={
                 <>
                   <span className='text-t-tertiary'>{t('settings.webui.allowRemoteDesc')}</span>
-                  <button
-                    className='ml-8px text-primary hover:opacity-80 underline underline-offset-2 cursor-pointer bg-transparent border-none p-0 text-12px font-500 transition-colors'
-                    onClick={() => shell.openExternal.invoke('https://github.com/iOfficeAI/AionUi/wiki/Remote-Internet-Access-Guide').catch(console.error)}
-                  >
+                  <button className='ml-8px text-primary hover:opacity-80 underline underline-offset-2 cursor-pointer bg-transparent border-none p-0 text-12px font-500 transition-colors' onClick={() => shell.openExternal.invoke('https://github.com/iOfficeAI/AionUi/wiki/Remote-Internet-Access-Guide').catch(console.error)}>
                     {t('settings.webui.viewGuide')}
                   </button>
                 </>

@@ -35,7 +35,7 @@ const resolveRendererPath = () => {
 
   for (const candidate of candidates) {
     if (fs.existsSync(candidate.indexHtml)) {
-      return candidate as const;
+      return candidate;
     }
   }
 
