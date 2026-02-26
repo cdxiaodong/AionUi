@@ -322,6 +322,14 @@ export class AcpConnection {
         const spawnStart = Date.now();
         const config = createGenericSpawnConfig(cliPath, workingDir, acpArgs, customEnv);
         this.ensureMinNodeVersion(config.options.env as Record<string, string | undefined>, 18, 17, 'iflow CLI');
+
+        // Diagnostic logging for #963 — helps identify env leaks causing iflow-cli crash
+        const iflowEnv = config.options.env as Record<string, string | undefined>;
+        console.log(`[ACP iflow] spawn: command=${config.command}, args=${JSON.stringify(config.args)}`);
+        console.log(`[ACP iflow] env: TERM=${iflowEnv.TERM}, NO_COLOR=${iflowEnv.NO_COLOR}, FORCE_COLOR=${iflowEnv.FORCE_COLOR}, COLORTERM=${iflowEnv.COLORTERM}`);
+        console.log(`[ACP iflow] env: NODE_OPTIONS=${iflowEnv.NODE_OPTIONS}, NODE_DEBUG=${iflowEnv.NODE_DEBUG}`);
+        console.log(`[ACP iflow] env: PATH (first 200)=${iflowEnv.PATH?.substring(0, 200)}`);
+
         this.child = spawn(config.command, config.args, config.options);
         if (ACP_PERF_LOG) console.log(`[ACP-PERF] connect: iflow process spawned ${Date.now() - spawnStart}ms`);
         await this.setupChildProcessHandlers(backend);
