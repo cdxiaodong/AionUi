@@ -14,6 +14,7 @@ import { DeleteOne, EditOne, Export, MessageOne, Pushpin } from '@icon-park/reac
 import classNames from 'classnames';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLayoutContext } from '@/renderer/context/LayoutContext';
 
 import type { ConversationRowProps } from './types';
 import { getBackendKeyFromConversation } from './utils/exportHelpers';
@@ -23,6 +24,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
   const { conversation, collapsed, batchMode, checked, selected, menuVisible } = props;
   const { onToggleChecked, onConversationClick, onOpenMenu, onMenuVisibleChange, onEditStart, onDelete, onExport, onTogglePin } = props;
   const { t } = useTranslation();
+  const layout = useLayoutContext();
   const { getJobStatus } = useCronJobsMap();
   const { info: assistantInfo } = usePresetAssistantInfo(conversation);
   const isPinned = isConversationPinned(conversation);
@@ -58,7 +60,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
   };
 
   return (
-    <Tooltip key={conversation.id} disabled={!collapsed} content={conversation.name || t('conversation.welcome.newConversation')} position='right'>
+    <Tooltip key={conversation.id} disabled={!collapsed || !!layout?.isMobile} content={conversation.name || t('conversation.welcome.newConversation')} position='right'>
       <div
         id={'c-' + conversation.id}
         className={classNames('chat-history__item px-12px py-8px rd-8px flex justify-start items-center group cursor-pointer relative overflow-hidden shrink-0 conversation-item [&.conversation-item+&.conversation-item]:mt-2px min-w-0 transition-colors', {
