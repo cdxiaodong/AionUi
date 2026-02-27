@@ -35,6 +35,8 @@ interface UseAutoScrollReturn {
   scrollToBottom: (behavior?: 'smooth' | 'auto') => void;
   /** Hide the scroll button */
   hideScrollButton: () => void;
+  /** Virtuoso followOutput callback for streaming auto-scroll */
+  followOutput: (isAtBottom: boolean) => boolean | 'smooth' | 'auto';
 }
 
 export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): UseAutoScrollReturn {
@@ -127,6 +129,18 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
     }
   }, [messages, scrollToBottom]);
 
+  // Virtuoso followOutput callback — handles both new items and streaming
+  // content growth (when last item's height changes). This is the primary
+  // mechanism for keeping the view pinned to the bottom during AI streaming.
+  const followOutput = useCallback(
+    (isAtBottom: boolean) => {
+      if (userScrolledRef.current) return false;
+      if (isAtBottom) return 'smooth' as const;
+      return false;
+    },
+    []
+  );
+
   // Hide scroll button handler
   const hideScrollButton = useCallback(() => {
     userScrolledRef.current = false;
@@ -139,5 +153,6 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
     showScrollButton,
     scrollToBottom,
     hideScrollButton,
+    followOutput,
   };
 }

@@ -147,7 +147,7 @@ const MessageList: React.FC<{ className?: string }> = () => {
   }, [list]);
 
   // Use auto-scroll hook
-  const { virtuosoRef, handleScroll, showScrollButton, scrollToBottom, hideScrollButton } = useAutoScroll({
+  const { virtuosoRef, handleScroll, showScrollButton, scrollToBottom, hideScrollButton, followOutput } = useAutoScroll({
     messages: list,
     itemCount: processedList.length,
   });
@@ -180,6 +180,7 @@ const MessageList: React.FC<{ className?: string }> = () => {
             className='flex-1 h-full pb-10px box-border'
             data={processedList}
             initialTopMostItemIndex={processedList.length - 1}
+            followOutput={followOutput}
             atBottomThreshold={100}
             increaseViewportBy={200}
             itemContent={renderItem}
