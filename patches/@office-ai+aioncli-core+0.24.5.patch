@@ -1,0 +1,41 @@
+diff --git a/node_modules/@office-ai/aioncli-core/dist/src/core/openaiContentGenerator.js b/node_modules/@office-ai/aioncli-core/dist/src/core/openaiContentGenerator.js
+index f5e265a..5ec5d02 100644
+--- a/node_modules/@office-ai/aioncli-core/dist/src/core/openaiContentGenerator.js
++++ b/node_modules/@office-ai/aioncli-core/dist/src/core/openaiContentGenerator.js
+@@ -70,6 +70,27 @@ export class OpenAIContentGenerator {
+     shouldSuppressErrorLogging(_error, _request) {
+         return false; // Default behavior: never suppress error logging
+     }
++    /**
++     * Check if stream_options should be included in streaming requests.
++     * Some providers (e.g. Cerebras) strictly validate request parameters
++     * and return 422 for unknown fields like stream_options.
++     * Default: include stream_options (most OpenAI-compatible providers support it).
++     */
++    shouldIncludeStreamOptions() {
++        const baseURL = this.client?.baseURL || '';
++        let hostname;
++        try {
++            hostname = new URL(baseURL).hostname;
++        }
++        catch (_e) {
++            return true; // Default to including stream_options
++        }
++        // Providers known to reject stream_options with 422
++        const strictProviders = [
++            'api.cerebras.ai',
++        ];
++        return !strictProviders.some(h => hostname === h || hostname.endsWith('.' + h));
++    }
+     /**
+      * Check if metadata should be included in the request
+      * Only include metadata for specific providers that support it
+@@ -263,7 +284,7 @@ export class OpenAIContentGenerator {
+                 messages,
+                 ...samplingParams,
+                 stream: true,
+-                stream_options: { include_usage: true },
++                ...(this.shouldIncludeStreamOptions() && { stream_options: { include_usage: true } }),
+                 ...(metadata && { metadata }),
+             };
+             // Enable store for GPT-5 and GPT-4 models when using metadata
