@@ -85,6 +85,9 @@ const validateRuntimeMismatch = async (conversationId: string): Promise<boolean>
   return true;
 };
 
+const EMPTY_AT_PATH: Array<string | FileOrFolderItem> = [];
+const EMPTY_UPLOAD_FILES: string[] = [];
+
 const OpenClawSendBox: React.FC<{ conversation_id: string }> = ({ conversation_id }) => {
   const [workspacePath, setWorkspacePath] = useState('');
   const { t } = useTranslation();
@@ -157,21 +160,31 @@ const OpenClawSendBox: React.FC<{ conversation_id: string }> = ({ conversation_i
     };
   }, []);
 
-  const { content, setContent, atPath, setAtPath, uploadFile, setUploadFile } = (function useDraft() {
-    const { data, mutate } = useOpenClawSendBoxDraft(conversation_id);
-    const EMPTY: Array<string | FileOrFolderItem> = [];
-    const atPath = data?.atPath ?? EMPTY;
-    const uploadFile = data?.uploadFile ?? [];
-    const content = data?.content ?? '';
-    return {
-      atPath,
-      uploadFile,
-      content,
-      setAtPath: (val: Array<string | FileOrFolderItem>) => mutate((prev) => ({ ...(prev as OpenClawDraftData), atPath: val })),
-      setUploadFile: (val: string[]) => mutate((prev) => ({ ...(prev as OpenClawDraftData), uploadFile: val })),
-      setContent: (val: string) => mutate((prev) => ({ ...(prev as OpenClawDraftData), content: val })),
-    };
-  })();
+  const { data: draftData, mutate: mutateDraft } = useOpenClawSendBoxDraft(conversation_id);
+  const atPath = draftData?.atPath ?? EMPTY_AT_PATH;
+  const uploadFile = draftData?.uploadFile ?? EMPTY_UPLOAD_FILES;
+  const content = draftData?.content ?? '';
+
+  const setAtPath = useCallback(
+    (val: Array<string | FileOrFolderItem>) => {
+      mutateDraft((prev) => ({ ...(prev as OpenClawDraftData), atPath: val }));
+    },
+    [draftData, mutateDraft]
+  );
+
+  const setUploadFile = useCallback(
+    (val: string[]) => {
+      mutateDraft((prev) => ({ ...(prev as OpenClawDraftData), uploadFile: val }));
+    },
+    [draftData, mutateDraft]
+  );
+
+  const setContent = useCallback(
+    (val: string) => {
+      mutateDraft((prev) => ({ ...(prev as OpenClawDraftData), content: val }));
+    },
+    [draftData, mutateDraft]
+  );
 
   const setContentRef = useLatestRef(setContent);
   const atPathRef = useLatestRef(atPath);
