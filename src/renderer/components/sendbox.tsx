@@ -56,6 +56,13 @@ const SendBox: React.FC<{
   const latestInputRef = useLatestRef(input);
   const setInputRef = useLatestRef(setInput);
 
+  // Drag-to-resize state for multi-line mode
+  // 多行模式下拖拽调整高度的状态
+  const [dragHeight, setDragHeight] = useState<number | null>(null);
+  const isDraggingRef = useRef(false);
+  const dragStartYRef = useRef(0);
+  const dragStartHeightRef = useRef(0);
+
   // 集成预览面板的"添加到聊天"功能 / Integrate preview panel's "Add to chat" functionality
   const { setSendBoxHandler, domSnippets, removeDomSnippet, clearDomSnippets } = usePreviewContext();
 
@@ -225,6 +232,49 @@ const SendBox: React.FC<{
     setIsInputFocused(false);
   }, []);
 
+  // Reset drag height when switching to single-line mode
+  useEffect(() => {
+    if (isSingleLine) setDragHeight(null);
+  }, [isSingleLine]);
+
+  // Drag handle to resize textarea height
+  // 拖拽手柄调整输入框高度
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      if (isSingleLine || isMobile) return;
+      e.preventDefault();
+      isDraggingRef.current = true;
+      dragStartYRef.current = e.clientY;
+      const textarea = containerRef.current?.querySelector('textarea');
+      dragStartHeightRef.current = textarea?.offsetHeight || 80;
+
+      const handleMouseMove = (ev: MouseEvent) => {
+        if (!isDraggingRef.current) return;
+        const delta = dragStartYRef.current - ev.clientY;
+        const newHeight = Math.max(80, Math.min(window.innerHeight * 0.6, dragStartHeightRef.current + delta));
+        setDragHeight(newHeight);
+      };
+
+      const handleMouseUp = () => {
+        isDraggingRef.current = false;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+
+      document.body.style.cursor = 'row-resize';
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [isSingleLine, isMobile]
+  );
+
+  const handleResizeReset = useCallback(() => {
+    setDragHeight(null);
+  }, []);
+
   const sendMessageHandler = () => {
     if (loading || isLoading) {
       message.warning(t('messages.conversationInProgress'));
@@ -306,6 +356,13 @@ const SendBox: React.FC<{
         }}
         {...dragHandlers}
       >
+        {/* Drag handle for resizing - only in multi-line, non-mobile mode */}
+        {/* 拖拽手柄 - 仅在多行非移动端模式下显示 */}
+        {!isSingleLine && !isMobile && (
+          <div className='flex items-center justify-center cursor-row-resize py-2px group' onMouseDown={handleResizeStart} onDoubleClick={handleResizeReset}>
+            <div className='w-32px h-3px rd-2px bg-[rgba(0,0,0,0.1)] group-hover:bg-[rgba(0,0,0,0.25)] transition-colors' />
+          </div>
+        )}
         <div style={{ width: '100%' }}>
           {prefix}
           {context}
@@ -336,8 +393,9 @@ const SendBox: React.FC<{
               marginLeft: 0,
               marginRight: 0,
               marginBottom: isSingleLine ? 0 : '8px',
-              height: isSingleLine ? '20px' : 'auto',
+              height: isSingleLine ? '20px' : dragHeight ? `${dragHeight}px` : 'auto',
               minHeight: isSingleLine ? '20px' : '80px',
+              ...(dragHeight && !isSingleLine ? { maxHeight: `${dragHeight}px` } : {}),
               overflowY: isSingleLine ? 'hidden' : 'auto',
               overflowX: 'hidden',
               whiteSpace: isSingleLine ? 'nowrap' : 'pre-wrap',
@@ -354,7 +412,7 @@ const SendBox: React.FC<{
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
             {...compositionHandlers}
-            autoSize={isSingleLine ? false : { minRows: 1, maxRows: 10 }}
+            autoSize={isSingleLine ? false : dragHeight ? false : { minRows: 1, maxRows: 10 }}
             onKeyDown={createKeyDownHandler(sendMessageHandler)}
           ></Input.TextArea>
           {isSingleLine && (
