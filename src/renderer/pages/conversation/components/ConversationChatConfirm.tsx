@@ -116,24 +116,46 @@ const ConversationChatConfirm: React.FC<PropsWithChildren<{ conversation_id: str
     );
   }, [conversation_id, checkAndAutoConfirm]);
 
-  // Handle ESC key to cancel confirmation
+  // Handle keyboard shortcuts for confirmation dialog
+  // Supports: Enter (first non-cancel option), Escape (cancel), number keys (1-9 select by index)
   useEffect(() => {
     if (!confirmations.length) return;
 
     const confirmation = confirmations[0];
+
+    const selectOption = (option: (typeof confirmation.options)[number]) => {
+      setConfirmations((prev) => prev.filter((p) => p.id !== confirmation.id));
+      void ipcBridge.conversation.confirmation.confirm.invoke({
+        conversation_id,
+        callId: confirmation.callId,
+        msg_id: confirmation.id,
+        data: option.value,
+      });
+    };
+
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Ignore when user is typing in an input/textarea
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+
       if (event.key === 'Escape') {
-        // Find cancel option (value is 'cancel')
         const cancelOption = confirmation.options.find((opt) => opt.value === 'cancel');
         if (cancelOption) {
           event.preventDefault();
-          setConfirmations((prev) => prev.filter((p) => p.id !== confirmation.id));
-          void ipcBridge.conversation.confirmation.confirm.invoke({
-            conversation_id,
-            callId: confirmation.callId,
-            msg_id: confirmation.id,
-            data: cancelOption.value,
-          });
+          selectOption(cancelOption);
+        }
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        // Enter selects the first non-cancel option (typically "Allow" or "Proceed")
+        const primaryOption = confirmation.options.find((opt) => opt.value !== 'cancel') ?? confirmation.options[0];
+        if (primaryOption) {
+          selectOption(primaryOption);
+        }
+      } else if (event.key >= '1' && event.key <= '9') {
+        const index = parseInt(event.key, 10) - 1;
+        if (index < confirmation.options.length) {
+          event.preventDefault();
+          selectOption(confirmation.options[index]);
         }
       }
     };
@@ -206,6 +228,10 @@ const ConversationChatConfirm: React.FC<PropsWithChildren<{ conversation_id: str
           <div className='shrink-0'>
             {confirmation.options.map((option, index) => {
               const label = $t(option.label, option.params);
+              // Determine keyboard shortcut hint for this option
+              const isCancel = option.value === 'cancel';
+              const isFirstNonCancel = !isCancel && confirmation.options.findIndex((o) => o.value !== 'cancel') === index;
+              const shortcutHint = isCancel ? 'Esc' : isFirstNonCancel ? `${index + 1} / Enter` : `${index + 1}`;
               return (
                 <div
                   onClick={() => {
@@ -215,9 +241,10 @@ const ConversationChatConfirm: React.FC<PropsWithChildren<{ conversation_id: str
                     void ipcBridge.conversation.confirmation.confirm.invoke({ conversation_id, callId: confirmation.callId, msg_id: confirmation.id, data: option.value });
                   }}
                   key={label + option.value + index}
-                  className='b-1px b-solid h-30px lh-30px b-[rgba(229,230,235,1)] rd-8px px-12px hover:bg-[rgba(229,231,240,1)] cursor-pointer mt-10px'
+                  className='b-1px b-solid h-30px lh-30px b-[rgba(229,230,235,1)] rd-8px px-12px hover:bg-[rgba(229,231,240,1)] cursor-pointer mt-10px flex items-center justify-between'
                 >
-                  {label}
+                  <span>{label}</span>
+                  <span className='text-11px color-[rgba(134,144,156,1)] ml-8px'>{shortcutHint}</span>
                 </div>
               );
             })}
