@@ -98,6 +98,7 @@ const WEBUI_CONFIG_FILE = 'webui.config.json';
 type WebUIUserConfig = {
   port?: number | string;
   allowRemote?: boolean;
+  autoStart?: boolean;
 };
 
 const parsePortValue = (value: unknown, _sourceLabel: string): number | null => {
@@ -130,6 +131,21 @@ const loadUserWebUIConfig = (): { config: WebUIUserConfig; path: string | null; 
     return { config: {}, path: null, exists: false };
   }
 };
+
+const saveUserWebUIConfig = (updates: Partial<WebUIUserConfig>): boolean => {
+  try {
+    const { config, path: configPath } = loadUserWebUIConfig();
+    const finalPath = configPath || path.join(app.getPath('userData'), WEBUI_CONFIG_FILE);
+    const merged = { ...config, ...updates };
+    fs.writeFileSync(finalPath, JSON.stringify(merged, null, 2), 'utf-8');
+    return true;
+  } catch (error) {
+    console.error('[App] Failed to save WebUI config:', error);
+    return false;
+  }
+};
+
+export { saveUserWebUIConfig, loadUserWebUIConfig };
 
 const resolveWebUIPort = (config: WebUIUserConfig): number => {
   const cliPort = parsePortValue(getSwitchValue('port') ?? getSwitchValue('webui-port'), 'CLI (--port)');
@@ -317,6 +333,25 @@ const handleAppReady = async (): Promise<void> => {
     await startWebServer(resolvedPort, allowRemote);
   } else {
     createWindow();
+
+    // Auto-start WebUI if configured (non-blocking)
+    const autoStartConfig = loadUserWebUIConfig();
+    if (autoStartConfig.config.autoStart === true) {
+      void (async () => {
+        try {
+          console.log('[App] Auto-starting WebUI...');
+          const port = resolveWebUIPort(autoStartConfig.config);
+          const remote = resolveRemoteAccess(autoStartConfig.config);
+          const { startWebServerWithInstance } = await import('./webserver/index');
+          const { setWebServerInstance } = await import('./process/bridge/webuiBridge');
+          const instance = await startWebServerWithInstance(port, remote);
+          setWebServerInstance(instance);
+          console.log(`[App] WebUI auto-started on port ${port}`);
+        } catch (err) {
+          console.error('[App] WebUI auto-start failed:', err);
+        }
+      })();
+    }
   }
 
   // 启动时初始化ACP检测器 (skip in --resetpass mode)

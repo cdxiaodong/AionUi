@@ -447,6 +447,37 @@ export function initWebuiBridge(): void {
     }
   });
 
+  // ===== WebUI 配置管理 / WebUI Config Management =====
+
+  // 获取 WebUI 配置 / Get WebUI config
+  webui.getConfig.provider(async () => {
+    try {
+      const { loadUserWebUIConfig } = await import('../../index');
+      const { config } = loadUserWebUIConfig();
+      return {
+        success: true,
+        data: {
+          port: typeof config.port === 'string' ? parseInt(config.port, 10) : config.port,
+          allowRemote: config.allowRemote ?? false,
+          autoStart: config.autoStart ?? false,
+        },
+      };
+    } catch (error) {
+      return { success: false, msg: error instanceof Error ? error.message : 'Failed to get config' };
+    }
+  });
+
+  // 保存 WebUI 配置 / Save WebUI config
+  webui.saveConfig.provider(async (updates) => {
+    try {
+      const { saveUserWebUIConfig } = await import('../../index');
+      const saved = saveUserWebUIConfig(updates);
+      return saved ? { success: true } : { success: false, msg: 'Failed to write config file' };
+    } catch (error) {
+      return { success: false, msg: error instanceof Error ? error.message : 'Failed to save config' };
+    }
+  });
+
   // ===== 直接 IPC 处理器（绕过 bridge 库）/ Direct IPC handlers (bypass bridge library) =====
   // 这些处理器直接返回结果，不依赖 emitter 模式
   // These handlers return results directly, without relying on emitter pattern

@@ -347,6 +347,10 @@ export const webui = {
   generateQRToken: bridge.buildProvider<IBridgeResponse<{ token: string; expiresAt: number; qrUrl: string }>, void>('webui.generate-qr-token'),
   // 验证二维码 token / Verify QR token
   verifyQRToken: bridge.buildProvider<IBridgeResponse<{ sessionToken: string; username: string }>, { qrToken: string }>('webui.verify-qr-token'),
+  // 获取 WebUI 配置 / Get WebUI config
+  getConfig: bridge.buildProvider<IBridgeResponse<{ port?: number; allowRemote?: boolean; autoStart?: boolean }>, void>('webui.get-config'),
+  // 保存 WebUI 配置 / Save WebUI config
+  saveConfig: bridge.buildProvider<IBridgeResponse, { port?: number; allowRemote?: boolean; autoStart?: boolean }>('webui.save-config'),
   // 状态变更事件 / Status changed event
   statusChanged: bridge.buildEmitter<{ running: boolean; port?: number; localUrl?: string; networkUrl?: string }>('webui.status-changed'),
   // 密码重置结果事件（绕过 provider 返回值问题）/ Password reset result event (workaround for provider return value issue)

@@ -64,6 +64,7 @@ const WebuiModalContent: React.FC = () => {
   const [startLoading, setStartLoading] = useState(false);
   const [port] = useState(25808);
   const [allowRemote, setAllowRemote] = useState(false);
+  const [autoStart, setAutoStart] = useState(false);
   const [cachedIP, setCachedIP] = useState<string | null>(null);
   const [cachedPassword, setCachedPassword] = useState<string | null>(null);
   // 标记密码是否可以明文显示（首次启动且未复制过）/ Flag for plaintext password display (first startup and not copied)
@@ -129,6 +130,16 @@ const WebuiModalContent: React.FC = () => {
       console.error('[WebuiModal] Failed to load WebUI status:', error);
     } finally {
       setLoading(false);
+    }
+
+    // Load config for auto-start preference
+    try {
+      const configResult = await webui.getConfig.invoke();
+      if (configResult?.success && configResult.data) {
+        setAutoStart(configResult.data.autoStart ?? false);
+      }
+    } catch {
+      /* ignore */
     }
   }, []);
 
@@ -376,6 +387,21 @@ const WebuiModalContent: React.FC = () => {
     }
   };
 
+  // 处理自动启动切换 / Handle auto-start toggle
+  const handleAutoStartChange = async (checked: boolean) => {
+    try {
+      const result = await webui.saveConfig.invoke({ autoStart: checked });
+      if (result?.success) {
+        setAutoStart(checked);
+        Message.success(checked ? t('settings.webui.autoStartEnabled') : t('settings.webui.autoStartDisabled'));
+      } else {
+        Message.error(result?.msg || t('settings.webui.saveConfigFailed'));
+      }
+    } catch {
+      Message.error(t('settings.webui.saveConfigFailed'));
+    }
+  };
+
   // 复制内容 / Copy content
   const handleCopy = (text: string) => {
     void navigator.clipboard.writeText(text);
@@ -606,6 +632,11 @@ const WebuiModalContent: React.FC = () => {
             }
           >
             <Switch checked={allowRemote} onChange={handleAllowRemoteChange} />
+          </PreferenceRow>
+
+          {/* 自动启动 / Auto Start */}
+          <PreferenceRow label={t('settings.webui.autoStart')} description={t('settings.webui.autoStartDesc')}>
+            <Switch checked={autoStart} onChange={handleAutoStartChange} disabled={loading} />
           </PreferenceRow>
         </div>
 
