@@ -22,6 +22,7 @@ import { usePreviewContext } from '@/renderer/pages/conversation/preview';
 import { useLatestRef } from '@/renderer/hooks/useLatestRef';
 import { useOpenFileSelector } from '@/renderer/hooks/useOpenFileSelector';
 import { useAutoTitle } from '@/renderer/hooks/useAutoTitle';
+import { useRegenerateMessage } from '@/renderer/hooks/useRegenerateMessage';
 import AgentModeSelector from '@/renderer/components/AgentModeSelector';
 import { useSlashCommands } from '@/renderer/hooks/useSlashCommands';
 
@@ -321,6 +322,7 @@ const AcpSendBox: React.FC<{
   const { t } = useTranslation();
   const { checkAndUpdateTitle } = useAutoTitle();
   const slashCommands = useSlashCommands(conversation_id, { agentStatus: acpStatus });
+  useRegenerateMessage(conversation_id, { setAiProcessing });
   const { atPath, uploadFile, setAtPath, setUploadFile, content, setContent } = useSendBoxDraft(conversation_id);
   const { setSendBoxHandler } = usePreviewContext();
 

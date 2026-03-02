@@ -29,6 +29,7 @@ import { useLatestRef } from '@/renderer/hooks/useLatestRef';
 import { useOpenFileSelector } from '@/renderer/hooks/useOpenFileSelector';
 import { useAutoTitle } from '@/renderer/hooks/useAutoTitle';
 import { useSlashCommands } from '@/renderer/hooks/useSlashCommands';
+import { useRegenerateMessage } from '@/renderer/hooks/useRegenerateMessage';
 
 interface NanobotDraftData {
   _type: 'nanobot';
@@ -60,6 +61,7 @@ const NanobotSendBox: React.FC<{ conversation_id: string }> = ({ conversation_id
     description: '',
     subject: '',
   });
+  useRegenerateMessage(conversation_id, { setAiProcessing });
 
   // Throttle thought updates to reduce render frequency
   const thoughtThrottleRef = useRef<{

@@ -29,6 +29,7 @@ import { useLatestRef } from '@/renderer/hooks/useLatestRef';
 import { useOpenFileSelector } from '@/renderer/hooks/useOpenFileSelector';
 import { useAutoTitle } from '@/renderer/hooks/useAutoTitle';
 import { useSlashCommands } from '@/renderer/hooks/useSlashCommands';
+import { useRegenerateMessage } from '@/renderer/hooks/useRegenerateMessage';
 
 interface OpenClawDraftData {
   _type: 'openclaw-gateway';
@@ -105,6 +106,7 @@ const OpenClawSendBox: React.FC<{ conversation_id: string }> = ({ conversation_i
     description: '',
     subject: '',
   });
+  useRegenerateMessage(conversation_id, { setAiProcessing });
 
   // Use ref to sync state for immediate access in event handlers
   // 使用 ref 同步状态，以便在事件处理程序中立即访问

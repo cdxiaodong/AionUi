@@ -989,6 +989,7 @@
     "downloadFailed": "Failed to download",
     "imageLoadFailed": "Failed to load image",
     "scrollToBottom": "Scroll to bottom",
+    "regenerate": "Regenerate",
     "availableCommands": "{{count}} Available Commands",
     "unknownMessageType": "Unknown message type: {{type}}",
     "permissionRequest": "Permission Request",

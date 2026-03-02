@@ -38,6 +38,8 @@ interface EventTypes {
   'preview.open': [{ content: string; contentType: PreviewContentType; metadata?: { title?: string; fileName?: string } }];
   // 填充输入框事件 / Fill sendbox input event
   'sendbox.fill': [string]; // prompt text to fill
+  // 重新生成事件 / Regenerate last AI response event
+  'conversation.regenerate': void;
 }
 
 export const emitter = new EventEmitter<EventTypes>();

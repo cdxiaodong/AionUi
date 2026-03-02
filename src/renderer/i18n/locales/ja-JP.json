@@ -900,6 +900,7 @@
     "downloadFailed": "ダウンロードに失敗しました",
     "imageLoadFailed": "画像の読み込みに失敗しました",
     "scrollToBottom": "下にスクロール",
+    "regenerate": "再生成",
     "confirmation": {
       "applyChange": "この変更を適用しますか？",
       "allowExecution": "実行を許可しますか？",

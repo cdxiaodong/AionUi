@@ -13,6 +13,7 @@ import { useAgentReadinessCheck } from '@/renderer/hooks/useAgentReadinessCheck'
 import { useAutoTitle } from '@/renderer/hooks/useAutoTitle';
 import { useLatestRef } from '@/renderer/hooks/useLatestRef';
 import { useOpenFileSelector } from '@/renderer/hooks/useOpenFileSelector';
+import { useRegenerateMessage } from '@/renderer/hooks/useRegenerateMessage';
 import { getSendBoxDraftHook, type FileOrFolderItem } from '@/renderer/hooks/useSendBoxDraft';
 import { createSetUploadFile, useSendBoxFiles } from '@/renderer/hooks/useSendBoxFiles';
 import { useSlashCommands } from '@/renderer/hooks/useSlashCommands';
@@ -574,6 +575,7 @@ const GeminiSendBox: React.FC<{
   );
 
   const { thought, running, tokenUsage, setActiveMsgId, setWaitingResponse, resetState } = useGeminiMessage(conversation_id, handleGeminiError);
+  useRegenerateMessage(conversation_id, { setAiProcessing: setWaitingResponse });
 
   useEffect(() => {
     void ipcBridge.conversation.get.invoke({ id: conversation_id }).then((res) => {

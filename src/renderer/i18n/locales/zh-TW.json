@@ -871,6 +871,7 @@
     "downloadFailed": "下載失敗",
     "imageLoadFailed": "圖片載入失敗",
     "scrollToBottom": "滾動到底部",
+    "regenerate": "重新生成",
     "confirmation": {
       "applyChange": "應用此更改？",
       "allowExecution": "允許執行？",
