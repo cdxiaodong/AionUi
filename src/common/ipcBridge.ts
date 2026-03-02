@@ -322,6 +322,7 @@ export const openclawConversation = {
 export const database = {
   getConversationMessages: bridge.buildProvider<import('@/common/chatLib').TMessage[], { conversation_id: string; page?: number; pageSize?: number }>('database.get-conversation-messages'),
   getUserConversations: bridge.buildProvider<import('@/common/storage').TChatConversation[], { page?: number; pageSize?: number }>('database.get-user-conversations'),
+  deleteMessagesAfter: bridge.buildProvider<number, { conversation_id: string; after_created_at: number }>('database.delete-messages-after'),
 };
 
 export const previewHistory = {

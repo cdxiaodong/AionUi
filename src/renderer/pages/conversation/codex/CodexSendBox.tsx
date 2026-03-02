@@ -22,6 +22,7 @@ import { usePreviewContext } from '@/renderer/pages/conversation/preview';
 import { useLatestRef } from '@/renderer/hooks/useLatestRef';
 import { useOpenFileSelector } from '@/renderer/hooks/useOpenFileSelector';
 import { useAutoTitle } from '@/renderer/hooks/useAutoTitle';
+import { useRegenerateMessage } from '@/renderer/hooks/useRegenerateMessage';
 import AgentModeSelector from '@/renderer/components/AgentModeSelector';
 import { useSlashCommands } from '@/renderer/hooks/useSlashCommands';
 
@@ -60,6 +61,7 @@ const CodexSendBox: React.FC<{ conversation_id: string }> = ({ conversation_id }
     description: '',
     subject: '',
   });
+  useRegenerateMessage(conversation_id, { setAiProcessing });
 
   // Track whether current turn has content output
   // Only reset aiProcessing when finish arrives after content (not after tool calls)
