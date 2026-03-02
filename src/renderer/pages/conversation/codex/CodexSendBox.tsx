@@ -4,6 +4,7 @@ import { transformMessage } from '@/common/chatLib';
 import { uuid } from '@/common/utils';
 import SendBox from '@/renderer/components/sendbox';
 import { getSendBoxDraftHook, type FileOrFolderItem } from '@/renderer/hooks/useSendBoxDraft';
+import { createSetUploadFile } from '@/renderer/hooks/useSendBoxFiles';
 import { useAddOrUpdateMessage } from '@/renderer/messages/hooks';
 import { allSupportedExts, type FileMetadata } from '@/renderer/services/FileService';
 import { emitter, useAddEventListener } from '@/renderer/utils/emitter';
@@ -119,12 +120,7 @@ const CodexSendBox: React.FC<{ conversation_id: string }> = ({ conversation_id }
     [draftData, mutateDraft]
   );
 
-  const setUploadFile = useCallback(
-    (val: string[]) => {
-      mutateDraft((prev) => ({ ...(prev as CodexDraftData), uploadFile: val }));
-    },
-    [draftData, mutateDraft]
-  );
+  const setUploadFile = createSetUploadFile(mutateDraft, draftData);
 
   const setContent = useCallback(
     (val: string) => {
