@@ -265,6 +265,7 @@ const SystemModalContent: React.FC = () => {
   const [modal, modalContextHolder] = Modal.useModal();
   const [error, setError] = useState<string | null>(null);
   const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
+  const [closeToTray, setCloseToTray] = useState(false);
   const viewMode = useSettingsViewMode();
   const isPageMode = viewMode === 'page';
   const initializingRef = useRef(true);
@@ -291,6 +292,14 @@ const SystemModalContent: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // 获取关闭到托盘设置 / Fetch close-to-tray setting
+  useEffect(() => {
+    ipcBridge.systemSettings.getCloseToTray
+      .invoke()
+      .then((enabled) => setCloseToTray(enabled))
+      .catch(() => {});
+  }, []);
+
   // Initialize form data
   useEffect(() => {
     if (systemInfo) {
@@ -314,8 +323,21 @@ const SystemModalContent: React.FC = () => {
       });
   };
 
+  // 切换关闭到托盘 / Toggle close-to-tray
+  const handleCloseToTrayChange = useCallback((checked: boolean) => {
+    setCloseToTray(checked);
+    // 通过 bridge 设置，provider 会处理持久化和主进程通知
+    ipcBridge.systemSettings.setCloseToTray.invoke({ enabled: checked }).catch(() => {
+      // 失败时回滚 UI 状态
+      setCloseToTray(!checked);
+    });
+  }, []);
+
   // 偏好设置项配置 / Preference items configuration
-  const preferenceItems = [{ key: 'language', label: t('settings.language'), component: <LanguageSwitcher /> }];
+  const preferenceItems = [
+    { key: 'language', label: t('settings.language'), component: <LanguageSwitcher /> },
+    { key: 'closeToTray', label: t('settings.closeToTray'), component: <Switch checked={closeToTray} onChange={handleCloseToTrayChange} /> },
+  ];
 
   // 目录配置保存确认 / Directory configuration save confirmation
   const saveDirConfigValidate = (_values: { cacheDir: string; workDir: string }): Promise<unknown> => {
