@@ -33,9 +33,13 @@ export function initSystemSettingsBridge(): void {
     return value ?? false;
   });
 
-  // 设置"关闭到托盘" / Set "close to tray" setting
+  // 设置"关闭到托盘"，先持久化再通知主进程
+  // Set "close to tray", persist first then notify main process
   ipcBridge.systemSettings.setCloseToTray.provider(async ({ enabled }) => {
+    // 先持久化到配置存储
     await ConfigStorage.set('system.closeToTray', enabled);
+    // 然后通知主进程更新托盘状态
     _changeListener?.(enabled);
   });
+
 }
