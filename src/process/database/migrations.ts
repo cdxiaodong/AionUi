@@ -826,13 +826,49 @@ const migration_v14: IMigration = {
 };
 
 /**
+ * Migration v14 -> v15: Add hook_jobs table for event-driven triggers
+ */
+const migration_v15: IMigration = {
+  version: 15,
+  name: 'Add hook_jobs table',
+  up: (db) => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS hook_jobs (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        kind TEXT NOT NULL CHECK(kind IN ('webhook', 'rss', 'file')),
+        enabled INTEGER DEFAULT 1,
+        config TEXT NOT NULL,
+        message TEXT NOT NULL,
+        metadata TEXT NOT NULL,
+        state TEXT NOT NULL,
+        created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_hook_jobs_kind ON hook_jobs(kind);
+      CREATE INDEX IF NOT EXISTS idx_hook_jobs_enabled ON hook_jobs(enabled);
+    `);
+    console.log('[Migration v15] Added hook_jobs table');
+  },
+  down: (db) => {
+    db.exec(`
+      DROP INDEX IF EXISTS idx_hook_jobs_enabled;
+      DROP INDEX IF EXISTS idx_hook_jobs_kind;
+      DROP TABLE IF EXISTS hook_jobs;
+    `);
+    console.log('[Migration v15] Rolled back: Removed hook_jobs table');
+  },
+};
+
+/**
  * All migrations in order
  */
 // prettier-ignore
 export const ALL_MIGRATIONS: IMigration[] = [
   migration_v1, migration_v2, migration_v3, migration_v4, migration_v5, migration_v6,
   migration_v7, migration_v8, migration_v9, migration_v10, migration_v11, migration_v12,
-  migration_v13, migration_v14,
+  migration_v13, migration_v14, migration_v15,
 ];
 
 /**

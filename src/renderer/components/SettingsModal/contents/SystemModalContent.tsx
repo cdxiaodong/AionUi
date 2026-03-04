@@ -7,7 +7,8 @@
 import { ipcBridge } from '@/common';
 import LanguageSwitcher from '@/renderer/components/LanguageSwitcher';
 import { iconColors } from '@/renderer/theme/colors';
-import { Alert, Button, Form, Modal, Tooltip } from '@arco-design/web-react';
+import { ConfigStorage } from '@/common/storage';
+import { Alert, Button, Form, InputNumber, Input, Modal, Tooltip, Message } from '@arco-design/web-react';
 import { FolderOpen } from '@icon-park/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

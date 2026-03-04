@@ -80,6 +80,11 @@ export interface IConfigStorageRefer {
   'migration.builtinDefaultSkillsAdded_v2'?: boolean;
   // 迁移标记：为所有内置助手添加 promptsI18n / Migration flag: add promptsI18n for all builtin assistants
   'migration.promptsI18nAdded'?: boolean;
+  // Webhook 服务器配置 / Webhook server configuration
+  'webhook.config'?: {
+    host: string;   // 监听地址，默认 '127.0.0.1' / Listen address, default '127.0.0.1'
+    port: number;   // 端口，默认 9880 / Port, default 9880
+  };
   // Telegram assistant default model / Telegram 助手默认模型
   'assistant.telegram.defaultModel'?: {
     id: string;

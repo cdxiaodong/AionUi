@@ -9,6 +9,7 @@ import type { IProvider, TChatConversation, TProviderWithModel } from '@/common/
 import { uuid } from '@/common/utils';
 import addChatIcon from '@/renderer/assets/add-chat.svg';
 import { CronJobManager } from '@/renderer/pages/cron';
+import { HookManager } from '@/renderer/pages/hooks';
 import { usePresetAssistantInfo } from '@/renderer/hooks/usePresetAssistantInfo';
 import { iconColors } from '@/renderer/theme/colors';
 import { Button, Dropdown, Menu, Tooltip, Typography } from '@arco-design/web-react';
@@ -122,7 +123,12 @@ const GeminiConversationPanel: React.FC<{ conversation: GeminiConversation; slid
     siderTitle: sliderTitle,
     sider: <ChatSider conversation={conversation} />,
     headerLeft: <GeminiModelSelector selection={modelSelection} />,
-    headerExtra: <CronJobManager conversationId={conversation.id} />,
+    headerExtra: (
+      <>
+        <CronJobManager conversationId={conversation.id} />
+        <HookManager conversationId={conversation.id} conversationTitle={conversation.name} agentType="gemini" />
+      </>
+    ),
     workspaceEnabled,
     backend: 'gemini' as const,
     // 传递预设助手信息 / Pass preset assistant info
@@ -211,7 +217,12 @@ const ChatConversation: React.FC<{
         };
 
   return (
-    <ChatLayout title={conversation?.name} {...chatLayoutProps} headerLeft={modelSelector} headerExtra={conversation ? <CronJobManager conversationId={conversation.id} /> : undefined} siderTitle={sliderTitle} sider={<ChatSider conversation={conversation} />} workspaceEnabled={workspaceEnabled} conversationId={conversation?.id}>
+    <ChatLayout title={conversation?.name} {...chatLayoutProps} headerLeft={modelSelector} headerExtra={conversation ? (
+      <>
+        <CronJobManager conversationId={conversation.id} />
+        <HookManager conversationId={conversation.id} conversationTitle={conversation.name} agentType={conversation.type} />
+      </>
+    ) : undefined} siderTitle={sliderTitle} sider={<ChatSider conversation={conversation} />} workspaceEnabled={workspaceEnabled} conversationId={conversation?.id}>
       {conversationNode}
     </ChatLayout>
   );

@@ -8,6 +8,7 @@ import { ipcBridge } from '@/common';
 import type { TChatConversation } from '@/common/storage';
 import FlexFullContainer from '@/renderer/components/FlexFullContainer';
 import { CronJobIndicator, useCronJobsMap } from '@/renderer/pages/cron';
+import { HookIndicator, useHooksMap } from '@/renderer/pages/hooks';
 import { addEventListener, emitter } from '@/renderer/utils/emitter';
 import { blockMobileInputFocus, blurActiveElement } from '@/renderer/utils/focus';
 import { cleanupSiderTooltips, getSiderTooltipProps } from '@/renderer/utils/siderTooltip';
@@ -70,6 +71,7 @@ const ChatHistory: React.FC<{ onSessionClick?: () => void; collapsed?: boolean }
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { getJobStatus } = useCronJobsMap();
+  const { getHookStatus } = useHooksMap();
   const siderTooltipProps = getSiderTooltipProps(collapsed && !isMobile);
 
   useScrollIntoView(id);
@@ -175,6 +177,7 @@ const ChatHistory: React.FC<{ onSessionClick?: () => void; collapsed?: boolean }
     const isSelected = id === conversation.id;
     const isEditing = editingId === conversation.id;
     const cronStatus = getJobStatus(conversation.id);
+    const hookStatus = getHookStatus(conversation.id);
 
     return (
       <Tooltip key={conversation.id} {...siderTooltipProps} content={conversation.name || t('conversation.welcome.newConversation')} position='right'>
@@ -193,6 +196,7 @@ const ChatHistory: React.FC<{ onSessionClick?: () => void; collapsed?: boolean }
               <div className='flex items-center gap-4px w-full'>
                 <div className='chat-history__item-name text-nowrap overflow-hidden text-ellipsis inline-block flex-1 text-14px lh-24px whitespace-nowrap min-w-0'>{conversation.name}</div>
                 <CronJobIndicator status={cronStatus} size={14} />
+                <HookIndicator status={hookStatus} size={14} />
               </div>
             )}
           </FlexFullContainer>

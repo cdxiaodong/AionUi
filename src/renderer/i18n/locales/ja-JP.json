@@ -1124,6 +1124,59 @@
   "cron.drawer.save": "保存",
   "cron.drawer.saveSuccess": "保存しました",
   "cron.message.badge": "スケジュール",
+  "hooks": {
+    "title": "イベントフック",
+    "add": "フックを追加",
+    "empty": "フックが設定されていません",
+    "confirmDelete": "このフックを削除しますか？",
+    "copyUrl": "URLをコピー",
+    "copyUrlSuccess": "Webhook URLをコピーしました",
+    "createSuccess": "フックを作成しました",
+    "deleteSuccess": "フックを削除しました",
+    "updateSuccess": "フックを更新しました",
+    "triggerCount": "トリガー回数",
+    "message": "メッセージテンプレート",
+    "messagePlaceholder": "トリガー時に送信するメッセージ。{{payload}} でイベントデータを参照できます。",
+    "drawer": {
+      "editTitle": "フックを編集",
+      "name": "名前",
+      "namePlaceholder": "フック名を入力",
+      "kind": "タイプ",
+      "save": "保存"
+    },
+    "actions": {
+      "edit": "編集",
+      "delete": "削除"
+    },
+    "config": {
+      "webhookSecret": "シークレット (HMAC)",
+      "webhookSecretPlaceholder": "オプション：署名検証用のHMACシークレット",
+      "feedUrl": "フィードURL",
+      "pollInterval": "ポーリング間隔",
+      "watchPath": "監視パス",
+      "events": "ファイルイベント",
+      "event_create": "作成",
+      "event_change": "変更",
+      "event_delete": "削除"
+    },
+    "status": {
+      "active": "実行中",
+      "paused": "一時停止中",
+      "error": "エラー",
+      "unread": "新しいトリガー"
+    },
+    "types": {
+      "webhook": "Webhook",
+      "rss": "RSSフィード",
+      "file": "ファイル監視"
+    },
+    "intervals": {
+      "1min": "毎分",
+      "5min": "5分ごと",
+      "15min": "15分ごと",
+      "1hour": "毎時"
+    }
+  },
   "guid.agentFallbackNotice": "{{original}} が利用できないため、{{fallback}} に自動切り替えしました。",
   "guid.noAgentAvailable": "利用可能なMain Agentがありません。Googleにログインするか、Claude/Codex CLIをインストールしてください。設定に移動しますか？",
   "guid.noAgentAvailableShort": "利用可能なMain Agentがありません。クリックして設定。",

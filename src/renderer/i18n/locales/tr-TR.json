@@ -1172,5 +1172,58 @@
       "manualDesc": "Manuel olarak bir model seç"
     }
   },
+  "hooks": {
+    "title": "Olay Kancaları",
+    "add": "Kanca Ekle",
+    "empty": "Yapılandırılmış kanca yok",
+    "confirmDelete": "Bu kancayı silmek istediğinizden emin misiniz?",
+    "copyUrl": "URL'yi Kopyala",
+    "copyUrlSuccess": "Webhook URL'si kopyalandı",
+    "createSuccess": "Kanca oluşturuldu",
+    "deleteSuccess": "Kanca silindi",
+    "updateSuccess": "Kanca güncellendi",
+    "triggerCount": "Tetiklemeler",
+    "message": "Mesaj Şablonu",
+    "messagePlaceholder": "Tetiklendiğinde gönderilecek mesaj. Olay verileri için {{payload}} kullanın.",
+    "drawer": {
+      "editTitle": "Kancayı Düzenle",
+      "name": "Ad",
+      "namePlaceholder": "Kanca adını girin",
+      "kind": "Tür",
+      "save": "Kaydet"
+    },
+    "actions": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+    "config": {
+      "webhookSecret": "Gizli Anahtar (HMAC)",
+      "webhookSecretPlaceholder": "İsteğe bağlı: İmza doğrulama için HMAC gizli anahtarı",
+      "feedUrl": "Besleme URL'si",
+      "pollInterval": "Yoklama Aralığı",
+      "watchPath": "İzleme Yolu",
+      "events": "Dosya Olayları",
+      "event_create": "Oluşturuldu",
+      "event_change": "Değiştirildi",
+      "event_delete": "Silindi"
+    },
+    "status": {
+      "active": "Aktif",
+      "paused": "Duraklatıldı",
+      "error": "Hata",
+      "unread": "Yeni tetikleme"
+    },
+    "types": {
+      "webhook": "Webhook",
+      "rss": "RSS Beslemesi",
+      "file": "Dosya İzleme"
+    },
+    "intervals": {
+      "1min": "Her dakika",
+      "5min": "Her 5 dakika",
+      "15min": "Her 15 dakika",
+      "1hour": "Her saat"
+    }
+  },
   "cron.message.badge": "Zamanlanmış"
 }

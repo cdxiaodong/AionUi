@@ -158,6 +158,7 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
+    "rss-parser": "^3.13.0",
     "semver": "^7.7.2",
     "sharp": "^0.34.3",
     "stream-browserify": "^3.0.0",

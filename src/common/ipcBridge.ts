@@ -560,3 +560,67 @@ export const channel = {
   pluginStatusChanged: bridge.buildEmitter<{ pluginId: string; status: IChannelPluginStatus }>('channel.plugin-status-changed'),
   userAuthorized: bridge.buildEmitter<IChannelUser>('channel.user-authorized'),
 };
+
+// ==================== Hook API ====================
+
+export type IHookKind = 'webhook' | 'rss' | 'file';
+
+export type IHookConfig =
+  | { kind: 'webhook'; path: string; secret?: string }
+  | { kind: 'rss'; feedUrl: string; pollIntervalMs: number }
+  | { kind: 'file'; watchPath: string; events: ('create' | 'change' | 'delete')[] };
+
+export interface IHookJob {
+  id: string;
+  name: string;
+  kind: IHookKind;
+  enabled: boolean;
+  config: IHookConfig;
+  message: string;
+  metadata: {
+    conversationId: string;
+    conversationTitle?: string;
+    agentType: AcpBackendAll;
+    createdBy: 'user' | 'agent';
+    createdAt: number;
+    updatedAt: number;
+  };
+  state: {
+    lastTriggeredAt?: number;
+    lastStatus?: 'ok' | 'error' | 'skipped';
+    lastError?: string;
+    triggerCount: number;
+    lastFeedItemId?: string;
+  };
+}
+
+export interface ICreateHookParams {
+  name: string;
+  kind: IHookKind;
+  config: IHookConfig;
+  message: string;
+  conversationId: string;
+  conversationTitle?: string;
+  agentType: AcpBackendAll;
+  createdBy: 'user' | 'agent';
+}
+
+// Hook management API / 事件 Hook 管理接口
+export const hooks = {
+  // Query
+  listHooks: bridge.buildProvider<IHookJob[], void>('hooks.list'),
+  listHooksByConversation: bridge.buildProvider<IHookJob[], { conversationId: string }>('hooks.list-by-conversation'),
+  getHook: bridge.buildProvider<IHookJob | null, { hookId: string }>('hooks.get'),
+  getWebhookPort: bridge.buildProvider<number, void>('hooks.webhook-port'),
+  // CRUD
+  addHook: bridge.buildProvider<IHookJob, ICreateHookParams>('hooks.add'),
+  updateHook: bridge.buildProvider<IHookJob, { hookId: string; updates: Partial<IHookJob> }>('hooks.update'),
+  removeHook: bridge.buildProvider<void, { hookId: string }>('hooks.remove'),
+  // Webhook server control
+  restartWebhookServer: bridge.buildProvider<{ port: number }, { host?: string; port?: number }>('hooks.restart-webhook-server'),
+  // Events
+  onHookCreated: bridge.buildEmitter<IHookJob>('hooks.created'),
+  onHookUpdated: bridge.buildEmitter<IHookJob>('hooks.updated'),
+  onHookRemoved: bridge.buildEmitter<{ hookId: string }>('hooks.removed'),
+  onHookTriggered: bridge.buildEmitter<{ hookId: string; status: string; error?: string }>('hooks.triggered'),
+};

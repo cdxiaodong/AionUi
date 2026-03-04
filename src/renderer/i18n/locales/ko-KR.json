@@ -1181,6 +1181,59 @@
   "cron.drawer.save": "저장",
   "cron.drawer.saveSuccess": "저장되었습니다",
   "cron.message.badge": "예약 작업",
+  "hooks": {
+    "title": "이벤트 훅",
+    "add": "훅 추가",
+    "empty": "설정된 훅이 없습니다",
+    "confirmDelete": "이 훅을 삭제하시겠습니까?",
+    "copyUrl": "URL 복사",
+    "copyUrlSuccess": "Webhook URL이 복사되었습니다",
+    "createSuccess": "훅이 생성되었습니다",
+    "deleteSuccess": "훅이 삭제되었습니다",
+    "updateSuccess": "훅이 업데이트되었습니다",
+    "triggerCount": "트리거 횟수",
+    "message": "메시지 템플릿",
+    "messagePlaceholder": "트리거 시 전송할 메시지. {{payload}}로 이벤트 데이터를 참조할 수 있습니다.",
+    "drawer": {
+      "editTitle": "훅 편집",
+      "name": "이름",
+      "namePlaceholder": "훅 이름 입력",
+      "kind": "유형",
+      "save": "저장"
+    },
+    "actions": {
+      "edit": "편집",
+      "delete": "삭제"
+    },
+    "config": {
+      "webhookSecret": "시크릿 (HMAC)",
+      "webhookSecretPlaceholder": "선택 사항: 서명 검증용 HMAC 시크릿",
+      "feedUrl": "피드 URL",
+      "pollInterval": "폴링 간격",
+      "watchPath": "감시 경로",
+      "events": "파일 이벤트",
+      "event_create": "생성",
+      "event_change": "변경",
+      "event_delete": "삭제"
+    },
+    "status": {
+      "active": "활성",
+      "paused": "일시 중지됨",
+      "error": "오류",
+      "unread": "새 트리거"
+    },
+    "types": {
+      "webhook": "Webhook",
+      "rss": "RSS 피드",
+      "file": "파일 감시"
+    },
+    "intervals": {
+      "1min": "매분",
+      "5min": "5분마다",
+      "15min": "15분마다",
+      "1hour": "매시간"
+    }
+  },
   "guid.agentFallbackNotice": "{{original}}을(를) 사용할 수 없어 {{fallback}}으로 자동 전환되었습니다.",
   "guid.noAgentAvailable": "사용 가용한 Main Agent가 없습니다. Google에 로그인하거나 Claude/Codex CLI를 설치하세요. 설정으로 이동하시겠습니까?",
   "guid.noAgentAvailableShort": "사용 가능한 Main Agent가 없습니다. 클릭하여 설정하세요.",

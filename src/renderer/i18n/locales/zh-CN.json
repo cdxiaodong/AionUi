@@ -1351,6 +1351,59 @@
   "cron.drawer.save": "保存",
   "cron.drawer.saveSuccess": "保存成功",
   "cron.message.badge": "定时任务",
+  "hooks": {
+    "title": "事件 Hook",
+    "add": "添加 Hook",
+    "empty": "暂无 Hook 配置",
+    "confirmDelete": "确定要删除此 Hook 吗？",
+    "copyUrl": "复制 URL",
+    "copyUrlSuccess": "Webhook URL 已复制",
+    "createSuccess": "Hook 创建成功",
+    "deleteSuccess": "Hook 已删除",
+    "updateSuccess": "Hook 更新成功",
+    "triggerCount": "触发次数",
+    "message": "消息模板",
+    "messagePlaceholder": "触发时发送的消息。使用 {{payload}} 引用事件数据。",
+    "drawer": {
+      "editTitle": "编辑 Hook",
+      "name": "名称",
+      "namePlaceholder": "请输入 Hook 名称",
+      "kind": "类型",
+      "save": "保存"
+    },
+    "actions": {
+      "edit": "编辑",
+      "delete": "删除"
+    },
+    "config": {
+      "webhookSecret": "密钥 (HMAC)",
+      "webhookSecretPlaceholder": "可选：用于签名验证的 HMAC 密钥",
+      "feedUrl": "Feed URL",
+      "pollInterval": "轮询间隔",
+      "watchPath": "监视路径",
+      "events": "文件事件",
+      "event_create": "创建",
+      "event_change": "修改",
+      "event_delete": "删除"
+    },
+    "status": {
+      "active": "运行中",
+      "paused": "已暂停",
+      "error": "出错",
+      "unread": "有新触发"
+    },
+    "types": {
+      "webhook": "Webhook",
+      "rss": "RSS 订阅",
+      "file": "文件监视"
+    },
+    "intervals": {
+      "1min": "每分钟",
+      "5min": "每 5 分钟",
+      "15min": "每 15 分钟",
+      "1hour": "每小时"
+    }
+  },
   "guid.agentFallbackNotice": "{{original}} 不可用，已自动切换到 {{fallback}}。",
   "guid.noAgentAvailable": "没有可用的 Main Agent。请登录 Google 或安装 Claude/Codex CLI。是否前往设置？",
   "guid.noAgentAvailableShort": "没有可用的 Main Agent。点击配置。",

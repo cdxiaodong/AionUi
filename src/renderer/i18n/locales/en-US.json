@@ -1352,6 +1352,59 @@
   "cron.drawer.save": "Save",
   "cron.drawer.saveSuccess": "Saved successfully",
   "cron.message.badge": "Scheduled",
+  "hooks": {
+    "title": "Event Hooks",
+    "add": "Add Hook",
+    "empty": "No hooks configured",
+    "confirmDelete": "Are you sure you want to delete this hook?",
+    "copyUrl": "Copy URL",
+    "copyUrlSuccess": "Webhook URL copied",
+    "createSuccess": "Hook created",
+    "deleteSuccess": "Hook deleted",
+    "updateSuccess": "Hook updated",
+    "triggerCount": "Triggers",
+    "message": "Message Template",
+    "messagePlaceholder": "Message to send when triggered. Use {{payload}} for event data.",
+    "drawer": {
+      "editTitle": "Edit Hook",
+      "name": "Name",
+      "namePlaceholder": "Enter hook name",
+      "kind": "Type",
+      "save": "Save"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "config": {
+      "webhookSecret": "Secret (HMAC)",
+      "webhookSecretPlaceholder": "Optional: HMAC secret for signature verification",
+      "feedUrl": "Feed URL",
+      "pollInterval": "Poll Interval",
+      "watchPath": "Watch Path",
+      "events": "File Events",
+      "event_create": "Created",
+      "event_change": "Changed",
+      "event_delete": "Deleted"
+    },
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "error": "Error",
+      "unread": "New trigger"
+    },
+    "types": {
+      "webhook": "Webhook",
+      "rss": "RSS Feed",
+      "file": "File Watch"
+    },
+    "intervals": {
+      "1min": "Every minute",
+      "5min": "Every 5 minutes",
+      "15min": "Every 15 minutes",
+      "1hour": "Every hour"
+    }
+  },
   "guid.agentFallbackNotice": "{{original}} is unavailable, using {{fallback}} instead.",
   "guid.noAgentAvailable": "No Main Agent is available. Please login to Google or install Claude/Codex CLI. Go to settings?",
   "guid.noAgentAvailableShort": "No Main Agent available. Click to configure.",
