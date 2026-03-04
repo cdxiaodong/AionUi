@@ -102,12 +102,25 @@ const SystemModalContent: React.FC = () => {
   const [modal, modalContextHolder] = Modal.useModal();
   const [error, setError] = useState<string | null>(null);
   const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
+  const [webhookHost, setWebhookHost] = useState('127.0.0.1');
+  const [webhookPort, setWebhookPort] = useState(9880);
+  const [webhookSaving, setWebhookSaving] = useState(false);
   const viewMode = useSettingsViewMode();
   const isPageMode = viewMode === 'page';
   const initializingRef = useRef(true);
 
   // Get system directory info
   const { data: systemInfo } = useSWR('system.dir.info', () => ipcBridge.application.systemInfo.invoke());
+
+  // Load webhook config
+  useEffect(() => {
+    ConfigStorage.get('webhook.config').then((config) => {
+      if (config) {
+        setWebhookHost(config.host || '127.0.0.1');
+        setWebhookPort(config.port || 9880);
+      }
+    }).catch(() => {});
+  }, []);
 
   // Initialize DevTools state from Main Process
   useEffect(() => {
@@ -139,6 +152,21 @@ const SystemModalContent: React.FC = () => {
       });
     }
   }, [systemInfo, form]);
+
+  const handleSaveWebhookConfig = async () => {
+    setWebhookSaving(true);
+    try {
+      await ConfigStorage.set('webhook.config', { host: webhookHost, port: webhookPort });
+      const result = await ipcBridge.hooks.restartWebhookServer.invoke({ host: webhookHost, port: webhookPort });
+      setWebhookPort(result.port);
+      Message.success(t('settings.webhookSaveSuccess'));
+    } catch (err) {
+      Message.error(t('settings.webhookSaveFailed'));
+      console.error('Failed to save webhook config:', err);
+    } finally {
+      setWebhookSaving(false);
+    }
+  };
 
   const handleToggleDevTools = () => {
     ipcBridge.application.openDevTools
@@ -230,6 +258,36 @@ const SystemModalContent: React.FC = () => {
                   {isDevToolsOpen ? t('settings.closeDevTools') : t('settings.openDevTools')}
                 </Button>
               </PreferenceRow>
+            </div>
+
+            {/* Webhook 服务器配置 / Webhook server configuration */}
+            <div className='text-14px font-500 text-t-primary pt-8px'>{t('settings.webhookServerTitle')}</div>
+            <div className='flex items-center gap-12px'>
+              <div className='flex-1'>
+                <div className='text-12px text-3 mb-4px'>{t('settings.webhookHost')}</div>
+                <Input
+                  size='small'
+                  value={webhookHost}
+                  onChange={(val) => setWebhookHost(val)}
+                  placeholder='127.0.0.1'
+                />
+              </div>
+              <div className='w-120px'>
+                <div className='text-12px text-3 mb-4px'>{t('settings.webhookPort')}</div>
+                <InputNumber
+                  size='small'
+                  value={webhookPort}
+                  onChange={(val) => setWebhookPort(val ?? 9880)}
+                  min={1024}
+                  max={65535}
+                  placeholder='9880'
+                />
+              </div>
+              <div className='flex items-end pt-18px'>
+                <Button size='small' type='primary' loading={webhookSaving} onClick={handleSaveWebhookConfig}>
+                  {t('common.save')}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
