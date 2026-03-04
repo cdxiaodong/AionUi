@@ -6,6 +6,7 @@
 
 import { ipcBridge } from '@/common';
 import { uuid } from '@/common/utils';
+import { REGENERATE_PREFIX } from '@/common/constants';
 import { useMessageList, useUpdateMessageList } from '@/renderer/messages/hooks';
 import { emitter, useAddEventListener } from '@/renderer/utils/emitter';
 import { useLatestRef } from './useLatestRef';
@@ -46,7 +47,14 @@ export function useRegenerateMessage(conversation_id: string, callbacks: { setAi
       }
       if (!lastUserMsg || !lastUserMsg.createdAt) return;
 
-      const userContent = lastUserMsg.type === 'text' ? (lastUserMsg.content as any).content : '';
+      // Extract original user content, stripping any existing regeneration prefix
+      // to prevent prefix stacking on repeated regenerations
+      let userContent = lastUserMsg.type === 'text' ? (lastUserMsg.content as any).content : '';
+      if (typeof userContent === 'string') {
+        while (userContent.startsWith(REGENERATE_PREFIX)) {
+          userContent = userContent.slice(REGENERATE_PREFIX.length);
+        }
+      }
       if (!userContent) return;
 
       // All checks passed — proceed with regeneration
@@ -55,7 +63,6 @@ export function useRegenerateMessage(conversation_id: string, callbacks: { setAi
       // 1. Delete AI messages after the user message from DB
       ipcBridge.database.deleteMessagesAfter
         .invoke({ conversation_id, after_created_at: afterTimestamp })
-        .catch((e) => console.error('[Regenerate] DB delete failed:', e))
         .then(() => {
           // 2. Remove AI messages from frontend state
           updateMessageList((currentList) => {
@@ -63,10 +70,11 @@ export function useRegenerateMessage(conversation_id: string, callbacks: { setAi
           });
 
           // 3. Set loading state and re-send with regeneration hint for the agent
+          // The prefix is hidden from UI display (stripped in MessageText component)
           callbacksRef.current.setAiProcessing(true);
 
           const msg_id = uuid();
-          const regenerateInput = `[Unsatisfied with the previous response. Please re-execute the following prompt with a different approach]\n\n${userContent}`;
+          const regenerateInput = `${REGENERATE_PREFIX}${userContent}`;
           return ipcBridge.conversation.sendMessage.invoke({
             input: regenerateInput,
             msg_id,
@@ -77,7 +85,7 @@ export function useRegenerateMessage(conversation_id: string, callbacks: { setAi
           emitter.emit('chat.history.refresh');
         })
         .catch((e) => {
-          console.error('[Regenerate] Failed to re-send message:', e);
+          console.error('[Regenerate] Failed:', e);
           callbacksRef.current.setAiProcessing(false);
         });
     },

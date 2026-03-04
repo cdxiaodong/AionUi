@@ -49,6 +49,11 @@ export const MIME_TO_EXT_MAP: Record<string, string> = {
 /** 默认图片文件扩展名 */
 export const DEFAULT_IMAGE_EXTENSION = '.png';
 
+// ===== Regenerate 相关常量 =====
+
+/** Regenerate feature: prefix prepended to user content when re-sending to the agent */
+export const REGENERATE_PREFIX = '[Unsatisfied with the previous response. Please re-execute the following prompt with a different approach]\n\n';
+
 // ===== AI Provider 相关常量 =====
 
 // Stable ID for the Google Auth virtual provider.

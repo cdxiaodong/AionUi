@@ -5,7 +5,7 @@
  */
 
 import type { IMessageText } from '@/common/chatLib';
-import { AIONUI_FILES_MARKER } from '@/common/constants';
+import { AIONUI_FILES_MARKER, REGENERATE_PREFIX } from '@/common/constants';
 import { iconColors } from '@/renderer/theme/colors';
 import { emitter } from '@/renderer/utils/emitter';
 import { Alert, Message, Tooltip } from '@arco-design/web-react';
@@ -54,21 +54,33 @@ const useFormatContent = (content: string) => {
 };
 
 const MessageText: React.FC<{ message: IMessageText }> = ({ message }) => {
-  // Filter think tags from content before rendering
-  // 在渲染前过滤 think 标签
+  const isUserMessage = message.position === 'right';
+
+  // Filter think tags and regeneration prefix from content before rendering
   const contentToRender = useMemo(() => {
     const rawContent = message.content.content;
-    if (typeof rawContent === 'string' && hasThinkTags(rawContent)) {
-      return stripThinkTags(rawContent);
+    let content = typeof rawContent === 'string' ? rawContent : rawContent;
+
+    // Strip regeneration prefix from user messages (internal hint not meant for display)
+    // Use while loop to handle stacked prefixes from repeated regenerations
+    if (isUserMessage && typeof content === 'string') {
+      while (content.startsWith(REGENERATE_PREFIX)) {
+        content = content.slice(REGENERATE_PREFIX.length);
+      }
     }
-    return rawContent;
-  }, [message.content.content]);
+
+    // Strip think tags from AI messages
+    if (typeof content === 'string' && hasThinkTags(content)) {
+      content = stripThinkTags(content);
+    }
+
+    return content;
+  }, [message.content.content, isUserMessage]);
 
   const { text, files } = parseFileMarker(contentToRender);
   const { data, json } = useFormatContent(text);
   const { t } = useTranslation();
   const [showCopyAlert, setShowCopyAlert] = useState(false);
-  const isUserMessage = message.position === 'right';
   const lastAssistantMessageId = useContext(RegenerateContext);
   const isLastAssistant = !isUserMessage && message.id === lastAssistantMessageId;
 
