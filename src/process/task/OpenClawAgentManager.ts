@@ -167,6 +167,10 @@ class OpenClawAgentManager extends BaseAgentManager<OpenClawAgentManagerData> {
     // Set status to running when message is being processed
     this.status = 'running';
     try {
+      // Re-initialize agent if it was stopped (bootstrap cleared by stop())
+      if (!this.bootstrap) {
+        this.bootstrap = this.initAgent(this.options);
+      }
       await this.bootstrap;
 
       // Save user message to chat history
@@ -238,7 +242,11 @@ class OpenClawAgentManager extends BaseAgentManager<OpenClawAgentManagerData> {
   }
 
   stop() {
-    return this.agent?.stop?.() ?? Promise.resolve();
+    const result = this.agent?.stop?.() ?? Promise.resolve();
+    // Reset bootstrap so initAgent() creates a new agent on the next sendMessage()
+    this.bootstrap = undefined as any;
+    this.status = 'finished';
+    return result;
   }
 
   kill() {

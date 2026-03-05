@@ -630,12 +630,16 @@ class AcpAgentManager extends BaseAgentManager<AcpAgentManagerData, AcpPermissio
   /**
    * Override stop() because AcpAgentManager doesn't use ForkTask's subprocess architecture.
    * It directly creates AcpAgent in the main process, so we need to call agent.stop() directly.
+   * Resets bootstrap so that initAgent() will create a fresh agent on the next sendMessage().
    */
   async stop() {
     if (this.agent) {
-      return this.agent.stop();
+      await this.agent.stop();
     }
-    return Promise.resolve();
+    // Reset bootstrap so initAgent() creates a new agent on the next call
+    // (e.g. when user clicks Regenerate after stopping)
+    this.bootstrap = undefined;
+    this.status = 'finished';
   }
 
   /**

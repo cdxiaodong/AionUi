@@ -149,11 +149,11 @@ const MessageList: React.FC<{ className?: string }> = () => {
     return result;
   }, [list]);
 
-  // Compute the last assistant text message ID for the regenerate button
-  const lastAssistantMessageId = useMemo(() => {
+  // Compute the last user text message ID for the regenerate button
+  const lastUserMessageId = useMemo(() => {
     for (let i = processedList.length - 1; i >= 0; i--) {
       const item = processedList[i];
-      if ('position' in item && item.position === 'left' && item.type === 'text') {
+      if ('position' in item && item.position === 'right' && item.type === 'text') {
         return item.id;
       }
     }
@@ -189,7 +189,7 @@ const MessageList: React.FC<{ className?: string }> = () => {
       {/* Use PreviewGroup to wrap all messages for cross-message image preview */}
       <Image.PreviewGroup actionsLayout={['zoomIn', 'zoomOut', 'originalSize', 'rotateLeft', 'rotateRight']}>
         <ImagePreviewContext.Provider value={{ inPreviewGroup: true }}>
-          <RegenerateContext.Provider value={lastAssistantMessageId}>
+          <RegenerateContext.Provider value={lastUserMessageId}>
             <Virtuoso
               ref={virtuosoRef}
               className='flex-1 h-full pb-10px box-border'

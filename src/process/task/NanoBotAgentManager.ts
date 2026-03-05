@@ -88,6 +88,10 @@ class NanoBotAgentManager extends BaseAgentManager<NanoBotAgentManagerData> {
   async sendMessage(data: { content: string; files?: string[]; msg_id?: string }) {
     cronBusyGuard.setProcessing(this.conversation_id, true);
     try {
+      // Re-initialize agent if it was stopped (bootstrap cleared by stop())
+      if (!this.bootstrap) {
+        this.bootstrap = this.initAgent({ conversation_id: this.conversation_id, workspace: this.workspace });
+      }
       await this.bootstrap;
 
       // Save user message to chat history (frontend handles display directly)
@@ -148,7 +152,10 @@ class NanoBotAgentManager extends BaseAgentManager<NanoBotAgentManagerData> {
   }
 
   stop() {
-    return this.agent?.stop?.() ?? Promise.resolve();
+    const result = this.agent?.stop?.() ?? Promise.resolve();
+    // Reset bootstrap so initAgent() creates a new agent on the next sendMessage()
+    this.bootstrap = undefined as any;
+    return result;
   }
 
   kill() {

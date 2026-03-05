@@ -214,6 +214,10 @@ class CodexAgentManager extends BaseAgentManager<CodexAgentManagerData> implemen
     // Set status to running when message is being processed
     this.status = 'running';
     try {
+      // Re-initialize agent if it was stopped (bootstrap cleared by stop())
+      if (!this.bootstrap) {
+        this.initAgent(this.options);
+      }
       await this.bootstrap;
       const contentToSend = data.content?.includes(AIONUI_FILES_MARKER) ? data.content.split(AIONUI_FILES_MARKER)[0].trimEnd() : data.content;
 
@@ -543,7 +547,11 @@ class CodexAgentManager extends BaseAgentManager<CodexAgentManagerData> implemen
 
   // Stop current Codex stream in-process (override ForkTask default which targets a worker)
   stop() {
-    return this.agent?.stop?.() ?? Promise.resolve();
+    const result = this.agent?.stop?.() ?? Promise.resolve();
+    // Reset bootstrap so initAgent() creates a new agent on the next sendMessage()
+    this.bootstrap = undefined as any;
+    this.status = 'finished';
+    return result;
   }
 
   // Ensure we clean up agent resources on kill

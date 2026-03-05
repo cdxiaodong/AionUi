@@ -81,8 +81,8 @@ const MessageText: React.FC<{ message: IMessageText }> = ({ message }) => {
   const { data, json } = useFormatContent(text);
   const { t } = useTranslation();
   const [showCopyAlert, setShowCopyAlert] = useState(false);
-  const lastAssistantMessageId = useContext(RegenerateContext);
-  const isLastAssistant = !isUserMessage && message.id === lastAssistantMessageId;
+  const lastUserMessageId = useContext(RegenerateContext);
+  const isLastUser = isUserMessage && message.id === lastUserMessageId;
 
   // 过滤空内容，避免渲染空DOM
   if (!message.content.content || (typeof message.content.content === 'string' && !message.content.content.trim())) {
@@ -155,7 +155,7 @@ const MessageText: React.FC<{ message: IMessageText }> = ({ message }) => {
           })}
         >
           {copyButton}
-          {isLastAssistant && (
+          {isLastUser && (
             <Tooltip content={t('messages.regenerate', { defaultValue: 'Regenerate' })}>
               <div className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto' onClick={() => emitter.emit('conversation.regenerate')} style={{ lineHeight: 0 }}>
                 <Redo theme='outline' size='16' fill={iconColors.secondary} />
