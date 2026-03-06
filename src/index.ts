@@ -22,7 +22,7 @@ import { setupApplicationMenu } from './utils/appMenu';
 import { startWebServer } from './webserver';
 import { SERVER_CONFIG } from './webserver/config/constants';
 import { applyZoomToWindow } from './process/utils/zoom';
-import i18n from '@process/i18n';
+import i18n, { setInitialLanguage } from '@process/i18n';
 // @ts-expect-error - electron-squirrel-startup doesn't have types
 import electronSquirrelStartup from 'electron-squirrel-startup';
 
@@ -287,7 +287,7 @@ const getTrayIcon = (): Electron.NativeImage => {
 const buildTrayContextMenu = (): Electron.Menu => {
   return Menu.buildFromTemplate([
     {
-      label: i18n.t('tray.showWindow'),
+      label: i18n.t('common.tray.showWindow'),
       click: () => {
         if (mainWindow) {
           mainWindow.show();
@@ -297,7 +297,7 @@ const buildTrayContextMenu = (): Electron.Menu => {
     },
     { type: 'separator' },
     {
-      label: i18n.t('tray.quit'),
+      label: i18n.t('common.tray.quit'),
       click: () => {
         isQuitting = true;
         app.quit();
@@ -579,6 +579,19 @@ const handleAppReady = async (): Promise<void> => {
     await initializeAcpDetector();
 
     createWindow();
+
+    // 读取语言设置并初始化主进程 i18n，然后刷新托盘菜单
+    // Read language setting and initialize main process i18n, then refresh tray menu
+    try {
+      const savedLanguage = await ProcessConfig.get('language');
+      await setInitialLanguage(savedLanguage);
+      // 语言设置完成后，如果托盘已存在，刷新菜单 / After language is set, refresh tray menu if it exists
+      if (tray) {
+        refreshTrayMenu();
+      }
+    } catch (error) {
+      console.error('[index] Failed to initialize i18n language:', error);
+    }
 
     // 初始化关闭到托盘设置 / Initialize close-to-tray setting
     try {
