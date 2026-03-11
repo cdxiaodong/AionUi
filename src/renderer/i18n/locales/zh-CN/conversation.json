@@ -63,7 +63,11 @@
     "pinFailed": "置顶操作失败",
     "pinnedSection": "置顶",
     "deleteSuccess": "删除成功",
-    "deleteFailed": "删除失败"
+    "deleteFailed": "删除失败",
+    "import": "导入",
+    "importSuccess": "成功导入 {{count}} 个会话",
+    "importFailed": "导入失败",
+    "importPartialFail": "部分会话导入失败，请检查文件格式"
   },
   "tabs": {
     "closeAll": "关闭全部",

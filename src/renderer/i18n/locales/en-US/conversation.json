@@ -63,7 +63,11 @@
     "pinFailed": "Pin operation failed",
     "pinnedSection": "Pinned",
     "deleteSuccess": "Deleted successfully",
-    "deleteFailed": "Delete failed"
+    "deleteFailed": "Delete failed",
+    "import": "Import",
+    "importSuccess": "Successfully imported {{count}} conversation(s)",
+    "importFailed": "Import failed",
+    "importPartialFail": "Some conversations failed to import, please check the file format"
   },
   "tabs": {
     "closeAll": "Close All",

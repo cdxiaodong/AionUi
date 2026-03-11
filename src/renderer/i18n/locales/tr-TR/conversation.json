@@ -63,7 +63,11 @@
     "pinFailed": "Pin operation failed",
     "pinnedSection": "Pinned",
     "deleteSuccess": "Başarıyla silindi",
-    "deleteFailed": "Silme başarısız oldu"
+    "deleteFailed": "Silme başarısız oldu",
+    "import": "İçe Aktar",
+    "importSuccess": "{{count}} konuşma başarıyla içe aktarıldı",
+    "importFailed": "İçe aktarma başarısız oldu",
+    "importPartialFail": "Bazı konuşmalar içe aktarılamadı, dosya biçimini kontrol edin"
   },
   "tabs": {
     "closeAll": "Tümünü Kapat",

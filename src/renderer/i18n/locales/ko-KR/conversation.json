@@ -63,7 +63,11 @@
     "pinFailed": "Pin operation failed",
     "pinnedSection": "Pinned",
     "deleteSuccess": "삭제되었습니다",
-    "deleteFailed": "삭제에 실패했습니다"
+    "deleteFailed": "삭제에 실패했습니다",
+    "import": "가져오기",
+    "importSuccess": "{{count}}개의 대화를 가져왔습니다",
+    "importFailed": "가져오기 실패",
+    "importPartialFail": "일부 대화를 가져오지 못했습니다. 파일 형식을 확인해 주세요"
   },
   "tabs": {
     "closeAll": "모두 닫기",

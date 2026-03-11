@@ -21,6 +21,7 @@ import { useBatchSelection } from './hooks/useBatchSelection';
 import { useConversationActions } from './hooks/useConversationActions';
 import { useConversations } from './hooks/useConversations';
 import { useExport } from './hooks/useExport';
+import { useImport } from './hooks/useImport';
 import type { ConversationRowProps, WorkspaceGroupedHistoryProps } from './types';
 
 const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({ onSessionClick, collapsed = false, tooltipEnabled = false, batchMode = false, onBatchModeChange }) => {
@@ -56,6 +57,8 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({ onSes
     setSelectedConversationIds,
     onBatchModeChange,
   });
+
+  const { importLoading, handleImport } = useImport();
 
   const renderConversation = (conversation: TChatConversation) => {
     const rowProps: ConversationRowProps = {
@@ -179,9 +182,12 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({ onSes
         <div className='px-12px pb-8px'>
           <div className='rd-8px bg-fill-1 p-10px flex flex-col gap-8px border border-solid border-[rgba(var(--primary-6),0.08)]'>
             <div className='text-12px leading-18px text-t-secondary'>{t('conversation.history.selectedCount', { count: selectedCount })}</div>
-            <div className='grid grid-cols-2 gap-6px'>
-              <Button className='!col-span-2 !w-full !justify-center !min-w-0 !h-30px !px-8px !text-12px whitespace-nowrap' size='mini' type='secondary' onClick={handleToggleSelectAll}>
+            <div className='grid grid-cols-3 gap-6px'>
+              <Button className='!col-span-3 !w-full !justify-center !min-w-0 !h-30px !px-8px !text-12px whitespace-nowrap' size='mini' type='secondary' onClick={handleToggleSelectAll}>
                 {allSelected ? t('common.cancel') : t('conversation.history.selectAll')}
+              </Button>
+              <Button className='!w-full !justify-center !min-w-0 !h-30px !px-8px !text-12px whitespace-nowrap' size='mini' type='secondary' loading={importLoading} onClick={() => void handleImport()}>
+                {t('conversation.history.import')}
               </Button>
               <Button className='!w-full !justify-center !min-w-0 !h-30px !px-8px !text-12px whitespace-nowrap' size='mini' type='secondary' onClick={handleBatchExport}>
                 {t('conversation.history.batchExport')}

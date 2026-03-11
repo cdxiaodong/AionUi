@@ -6,9 +6,13 @@
 
 import type { CodexAgentManager } from '@/agent/codex';
 import { GeminiAgent, GeminiApprovalStore } from '@/agent/gemini';
+import type { TMessage } from '@/common/chatLib';
 import type { TChatConversation } from '@/common/storage';
 import { getDatabase } from '@process/database';
 import { cronService } from '@process/services/cron/CronService';
+import fs from 'fs/promises';
+import JSZip from 'jszip';
+import { z } from 'zod';
 import { ipcBridge } from '../../common';
 import { uuid } from '../../common/utils';
 import { ProcessChat } from '../initStorage';
@@ -500,5 +504,122 @@ export function initConversationBridge(): void {
     const keys = GeminiApprovalStore.createKeysFromConfirmation(action, commandType);
     if (keys.length === 0) return false;
     return task.approvalStore.allApproved(keys);
+  });
+
+  // Conversation import from ZIP or JSON file
+  // 从 ZIP 或 JSON 文件导入会话
+  const conversationJsonSchema = z.object({
+    version: z.literal(1),
+    conversation: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+        type: z.string(),
+        extra: z.unknown(),
+      })
+      .passthrough(),
+    messages: z.array(
+      z
+        .object({
+          id: z.string(),
+          type: z.string(),
+          content: z.unknown(),
+        })
+        .passthrough()
+    ),
+  });
+
+  const importSingleConversationJson = (jsonString: string, db: ReturnType<typeof getDatabase>, errors: string[]): boolean => {
+    try {
+      const parsed = JSON.parse(jsonString);
+      const validated = conversationJsonSchema.safeParse(parsed);
+      if (!validated.success) {
+        errors.push(`Invalid format: ${validated.error.issues.map((i) => i.message).join(', ')}`);
+        return false;
+      }
+
+      const data = validated.data;
+      const now = Date.now();
+      const newConversationId = uuid(16);
+
+      // Build the imported conversation with new ID and cleaned fields
+      const importedConversation = {
+        ...data.conversation,
+        id: newConversationId,
+        createTime: now,
+        modifyTime: now,
+        status: 'finished' as const,
+        source: 'aionui' as const,
+        extra: {
+          ...(data.conversation.extra && typeof data.conversation.extra === 'object' ? data.conversation.extra : {}),
+          workspace: undefined,
+          customWorkspace: undefined,
+        },
+      } as TChatConversation;
+
+      const createResult = db.createConversation(importedConversation);
+      if (!createResult.success) {
+        errors.push(`Failed to create conversation: ${createResult.error}`);
+        return false;
+      }
+
+      // Import messages with new IDs
+      for (const msg of data.messages) {
+        const importedMessage = {
+          ...msg,
+          id: uuid(16),
+          conversation_id: newConversationId,
+          createdAt: (msg as Record<string, unknown>).createdAt ?? Date.now(),
+        } as TMessage;
+        const msgResult = db.insertMessage(importedMessage);
+        if (!msgResult.success) {
+          console.warn('[conversationBridge] Failed to import message:', msgResult.error);
+        }
+      }
+
+      return true;
+    } catch (error) {
+      errors.push(`Parse error: ${error instanceof Error ? error.message : String(error)}`);
+      return false;
+    }
+  };
+
+  ipcBridge.conversation.importFromFile.provider(async ({ filePath }) => {
+    const errors: string[] = [];
+    let imported = 0;
+
+    try {
+      const db = getDatabase();
+      const fileBuffer = await fs.readFile(filePath);
+      const isZip = filePath.toLowerCase().endsWith('.zip');
+
+      if (isZip) {
+        const zip = await JSZip.loadAsync(fileBuffer);
+        const jsonFiles = Object.keys(zip.files).filter((name) => name.endsWith('conversation.json') && !zip.files[name].dir);
+
+        if (jsonFiles.length === 0) {
+          errors.push('No conversation.json found in ZIP');
+          return { imported: 0, errors };
+        }
+
+        for (const jsonPath of jsonFiles) {
+          const content = await zip.files[jsonPath].async('string');
+          if (importSingleConversationJson(content, db, errors)) {
+            imported++;
+          }
+        }
+      } else {
+        // Single JSON file
+        const content = fileBuffer.toString('utf-8');
+        if (importSingleConversationJson(content, db, errors)) {
+          imported++;
+        }
+      }
+
+      return { imported, errors };
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
+      return { imported, errors };
+    }
   });
 }

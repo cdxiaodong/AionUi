@@ -63,7 +63,11 @@
     "pinFailed": "Pin operation failed",
     "pinnedSection": "Pinned",
     "deleteSuccess": "刪除成功",
-    "deleteFailed": "刪除失敗"
+    "deleteFailed": "刪除失敗",
+    "import": "匯入",
+    "importSuccess": "成功匯入 {{count}} 個會話",
+    "importFailed": "匯入失敗",
+    "importPartialFail": "部分會話匯入失敗，請檢查檔案格式"
   },
   "tabs": {
     "closeAll": "全部關閉",

@@ -45,6 +45,7 @@ export const conversation = {
     list: bridge.buildProvider<IConfirmation<any>[], { conversation_id: string }>('confirmation.list'),
     remove: bridge.buildEmitter<{ conversation_id: string; id: string }>('confirmation.remove'),
   },
+  importFromFile: bridge.buildProvider<{ imported: number; errors: string[] }, { filePath: string }>('conversation.import-from-file'), // Import conversations from ZIP or JSON file
   // Session-level approval memory for "always allow" decisions
   // 会话级别的权限记忆，用于 "always allow" 决策
   approval: {
