@@ -62,7 +62,7 @@
   "tray.restart": "Uygulamayı Yeniden Başlat",
   "tray.quit": "Çıkış",
   "tray.runningTasks": "Çalışan Görevler",
-  "tray.pauseAll": "Tüm Görevleri Duraklat",
+  "tray.stopAll": "Tüm Görevleri Durdur",
   "tray.checkUpdate": "Güncelleştirme Kontrolü",
   "tray.recentChats": "Son Sohbetler",
   "tray.untitled": "Adsız"

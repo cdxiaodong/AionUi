@@ -62,7 +62,7 @@
   "tray.restart": "重啟應用",
   "tray.quit": "結束",
   "tray.runningTasks": "運行中的任務",
-  "tray.pauseAll": "暫停所有任務",
+  "tray.stopAll": "停止所有任務",
   "tray.checkUpdate": "檢查更新",
   "tray.recentChats": "最近對話",
   "tray.untitled": "未命名"

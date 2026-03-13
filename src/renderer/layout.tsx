@@ -281,8 +281,8 @@ const Layout: React.FC<{
       void navigate('/settings/about');
     };
 
-    // Handle pause all tasks request from tray / 托盘请求暂停所有任务
-    const handlePauseAllTasks = async () => {
+    // Handle stop all tasks request from tray / 托盘请求停止所有任务
+    const handleStopAllTasks = async () => {
       const { ipcBridge } = await import('@/common');
       const result = await ipcBridge.task.stopAll.invoke();
       if (result?.success) {
@@ -306,14 +306,14 @@ const Layout: React.FC<{
     window.addEventListener('tray:navigate-to-guid', handleNavigateToGuid as EventListener);
     window.addEventListener('tray:navigate-to-conversation', handleNavigateToConversation as EventListener);
     window.addEventListener('tray:open-about', handleOpenAbout as EventListener);
-    window.addEventListener('tray:pause-all-tasks', handlePauseAllTasks as EventListener);
+    window.addEventListener('tray:stop-all-tasks', handleStopAllTasks as EventListener);
     window.addEventListener('tray:check-update', handleCheckUpdate as EventListener);
 
     return () => {
       window.removeEventListener('tray:navigate-to-guid', handleNavigateToGuid as EventListener);
       window.removeEventListener('tray:navigate-to-conversation', handleNavigateToConversation as EventListener);
       window.removeEventListener('tray:open-about', handleOpenAbout as EventListener);
-      window.removeEventListener('tray:pause-all-tasks', handlePauseAllTasks as EventListener);
+      window.removeEventListener('tray:stop-all-tasks', handleStopAllTasks as EventListener);
       window.removeEventListener('tray:check-update', handleCheckUpdate as EventListener);
     };
   }, [navigate]);

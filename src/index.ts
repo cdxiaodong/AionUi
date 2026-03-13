@@ -12,6 +12,7 @@ import * as path from 'path';
 import { pathToFileURL } from 'url';
 import { initMainAdapterWithWindow } from './adapter/main';
 import { ipcBridge } from './common';
+import { ConfigStorage } from './common/storage';
 import { AION_ASSET_PROTOCOL } from './extensions/assetProtocol';
 import { initializeProcess } from './process';
 import { ProcessConfig } from './process/initStorage';
@@ -342,7 +343,6 @@ const buildTrayContextMenu = async (): Promise<Electron.Menu> => {
   // 获取运行中的任务数量 / Get running tasks count
   const getRunningTasksCount = (): number => {
     try {
-      const WorkerManage = require('./process/WorkerManage').default;
       return WorkerManage.listTasks().length;
     } catch {
       return 0;
@@ -406,13 +406,13 @@ const buildTrayContextMenu = async (): Promise<Electron.Menu> => {
     enabled: false,
   });
   template.push({
-    label: i18n.t('common.tray.pauseAll'),
+    label: i18n.t('common.tray.stopAll'),
     click: () => {
       if (mainWindow) {
         mainWindow.show();
         mainWindow.focus();
-        // 发送暂停所有任务的事件 / Send event to pause all tasks
-        mainWindow.webContents.send('tray:pause-all-tasks');
+        // 发送停止所有任务的事件 / Send event to stop all tasks
+        mainWindow.webContents.send('tray:stop-all-tasks');
       }
     },
   });
@@ -422,9 +422,10 @@ const buildTrayContextMenu = async (): Promise<Electron.Menu> => {
     label: i18n.t('common.tray.closeToTray'),
     type: 'checkbox',
     checked: closeToTrayEnabled,
-    click: async (menuItem) => {
-      const newState = !closeToTrayEnabled;
-      void ipcBridge.systemSettings.setCloseToTray.invoke({ enabled: newState });
+    click: (menuItem) => {
+      void saveCloseToTraySetting(menuItem.checked).catch((error) => {
+        console.error('[Tray] Failed to update close-to-tray setting:', error);
+      });
     },
   });
   template.push({
@@ -468,6 +469,34 @@ const buildTrayContextMenu = async (): Promise<Electron.Menu> => {
   return Menu.buildFromTemplate(template);
 };
 
+const setTrayContextMenu = async (): Promise<void> => {
+  if (!tray) {
+    return;
+  }
+  tray.setContextMenu(await buildTrayContextMenu());
+};
+
+const applyCloseToTraySetting = async (enabled: boolean): Promise<void> => {
+  closeToTrayEnabled = enabled;
+  if (!enabled) {
+    destroyTray();
+    return;
+  }
+  createOrUpdateTray();
+  await refreshTrayMenu();
+};
+
+const saveCloseToTraySetting = async (enabled: boolean): Promise<void> => {
+  await ProcessConfig.set('system.closeToTray', enabled);
+  await applyCloseToTraySetting(enabled);
+};
+
+const rebuildTrayContextMenu = (): void => {
+  void setTrayContextMenu().catch((error) => {
+    console.error('[Tray] Failed to rebuild tray menu:', error);
+  });
+};
+
 /**
  * 创建系统托盘 / Create system tray
  */
@@ -479,8 +508,7 @@ const createOrUpdateTray = (): void => {
     const icon = getTrayIcon();
     tray = new Tray(icon);
     tray.setToolTip('AionUi');
-    // 初始化菜单 / Initialize menu
-    void buildTrayContextMenu().then((menu) => tray?.setContextMenu(menu));
+    rebuildTrayContextMenu();
 
     // 双击托盘图标显示窗口（Windows/Linux）/ Double-click tray icon to show window (Windows/Linux)
     tray.on('double-click', () => {
@@ -490,13 +518,12 @@ const createOrUpdateTray = (): void => {
       }
     });
 
-    // 每次右键托盘图标时重建菜单（显示最新数据）/ Rebuild menu on right-click to show latest data
-    tray.on('click', (event: any) => {
-      if (event.event?.button === 2) {
-        // Right-click detected, rebuild context menu
-        void buildTrayContextMenu().then((menu) => tray?.setContextMenu(menu));
-      }
-    });
+    // Rebuild the menu right before opening it so dynamic sections stay fresh.
+    if (process.platform === 'darwin') {
+      tray.on('click', rebuildTrayContextMenu);
+    } else {
+      tray.on('right-click', rebuildTrayContextMenu);
+    }
   } catch (err) {
     console.error('[Tray] Failed to create tray:', err);
   }
@@ -506,10 +533,7 @@ const createOrUpdateTray = (): void => {
  * 刷新托盘右键菜单文案（语言切换时调用）/ Refresh tray context menu labels (called on language change)
  */
 const refreshTrayMenu = async (): Promise<void> => {
-  if (tray) {
-    const menu = await buildTrayContextMenu();
-    tray.setContextMenu(menu);
-  }
+  await setTrayContextMenu();
 };
 
 /**
@@ -821,7 +845,7 @@ const handleAppReady = async (): Promise<void> => {
     // 读取语言设置并初始化主进程 i18n，然后刷新托盘菜单
     // Read language setting and initialize main process i18n, then refresh tray menu
     try {
-      const savedLanguage = await ProcessConfig.get('language');
+      const savedLanguage = await ConfigStorage.get('language');
       await setInitialLanguage(savedLanguage);
       // 语言设置完成后，如果托盘已存在，刷新菜单 / After language is set, refresh tray menu if it exists
       if (tray) {
@@ -838,28 +862,20 @@ const handleAppReady = async (): Promise<void> => {
     } else {
       try {
         const savedCloseToTray = await ProcessConfig.get('system.closeToTray');
-        closeToTrayEnabled = savedCloseToTray ?? false;
-        if (closeToTrayEnabled) {
-          createOrUpdateTray();
-        }
+        await applyCloseToTraySetting(savedCloseToTray ?? false);
       } catch {
         // Ignore storage read errors, default to false
       }
 
       // 监听设置变更（通过 bridge 库）/ Listen for setting changes (via bridge library)
       onCloseToTrayChanged((enabled) => {
-        closeToTrayEnabled = enabled;
-        if (enabled) {
-          createOrUpdateTray();
-        } else {
-          destroyTray();
-        }
+        void applyCloseToTraySetting(enabled);
       });
     }
 
     // 监听语言变更，刷新托盘菜单文案 / Listen for language changes to refresh tray menu labels
     onLanguageChanged(() => {
-      refreshTrayMenu();
+      void refreshTrayMenu();
     });
 
     // Flush pending deep-link URL (received before window was ready)

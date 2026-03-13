@@ -5,7 +5,6 @@
  */
 
 import i18n from 'i18next';
-import { ConfigStorage } from '@/common/storage';
 import { DEFAULT_LANGUAGE, normalizeLanguageCode, mergeWithFallback, ensureAndSwitch, type LocaleData } from '@/common/i18n';
 
 // Static imports – Vite bundles these into the main-process output so they
