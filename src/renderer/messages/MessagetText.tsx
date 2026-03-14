@@ -7,10 +7,11 @@
 import type { IMessageText } from '@/common/chatLib';
 import { AIONUI_FILES_MARKER } from '@/common/constants';
 import { iconColors } from '@/renderer/theme/colors';
+import { emitter } from '@/renderer/utils/emitter';
 import { Alert, Tooltip } from '@arco-design/web-react';
-import { Copy } from '@icon-park/react';
+import { Copy, Redo } from '@icon-park/react';
 import classNames from 'classnames';
-import React, { useMemo, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import CollapsibleContent from '../components/CollapsibleContent';
 import FilePreview from '../components/FilePreview';
@@ -18,6 +19,7 @@ import HorizontalFileList from '../components/HorizontalFileList';
 import MarkdownView from '../components/Markdown';
 import { stripThinkTags, hasThinkTags } from '../utils/thinkTagFilter';
 import MessageCronBadge from './MessageCronBadge';
+import { RegenerateContext } from './MessageList';
 
 const parseFileMarker = (content: string) => {
   const markerIndex = content.indexOf(AIONUI_FILES_MARKER);
@@ -66,6 +68,8 @@ const MessageText: React.FC<{ message: IMessageText }> = ({ message }) => {
   const { t } = useTranslation();
   const [showCopyAlert, setShowCopyAlert] = useState(false);
   const isUserMessage = message.position === 'right';
+  const lastAssistantMessageId = useContext(RegenerateContext);
+  const isLastAssistant = !isUserMessage && message.id === lastAssistantMessageId;
 
   // 过滤空内容，避免渲染空DOM
   if (!message.content.content || (typeof message.content.content === 'string' && !message.content.content.trim())) {
@@ -139,6 +143,13 @@ const MessageText: React.FC<{ message: IMessageText }> = ({ message }) => {
           })}
         >
           {copyButton}
+          {isLastAssistant && (
+            <Tooltip content={t('messages.regenerate', { defaultValue: 'Regenerate' })}>
+              <div className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto' onClick={() => emitter.emit('conversation.regenerate')} style={{ lineHeight: 0 }}>
+                <Redo theme='outline' size='16' fill={iconColors.secondary} />
+              </div>
+            </Tooltip>
+          )}
         </div>
       </div>
       {showCopyAlert && <Alert type='success' content={t('messages.copySuccess')} showIcon className='fixed top-20px left-50% transform -translate-x-50% z-9999 w-max max-w-[80%]' style={{ boxShadow: '0px 2px 12px rgba(0,0,0,0.12)' }} closable={false} />}

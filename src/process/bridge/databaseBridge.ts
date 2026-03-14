@@ -64,4 +64,16 @@ export function initDatabaseBridge(): void {
       return [];
     }
   });
+
+  // Delete messages after a given timestamp (used by Regenerate feature)
+  ipcBridge.database.deleteMessagesAfter.provider(({ conversation_id, after_created_at }) => {
+    try {
+      const db = getDatabase();
+      const result = db.deleteMessagesAfterTimestamp(conversation_id, after_created_at);
+      return Promise.resolve(result.data || 0);
+    } catch (error) {
+      console.error('[DatabaseBridge] Error deleting messages after timestamp:', error);
+      return Promise.resolve(0);
+    }
+  });
 }

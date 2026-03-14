@@ -727,6 +727,27 @@ export class AionUIDatabase {
   }
 
   /**
+   * Delete all messages in a conversation created after a given timestamp
+   * Used by the "Regenerate" feature to remove AI responses before re-sending
+   */
+  deleteMessagesAfterTimestamp(conversationId: string, afterCreatedAt: number): IQueryResult<number> {
+    try {
+      const stmt = this.db.prepare('DELETE FROM messages WHERE conversation_id = ? AND created_at > ?');
+      const result = stmt.run(conversationId, afterCreatedAt);
+
+      return {
+        success: true,
+        data: result.changes,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
    * Get message by msg_id and conversation_id
    * Used for finding existing messages to update (e.g., streaming text accumulation)
    */

@@ -900,6 +900,7 @@
     "downloadFailed": "ダウンロードに失敗しました",
     "imageLoadFailed": "画像の読み込みに失敗しました",
     "scrollToBottom": "下にスクロール",
+    "regenerate": "再生成",
     "confirmation": {
       "applyChange": "この変更を適用しますか？",
       "allowExecution": "実行を許可しますか？",
@@ -910,6 +911,9 @@
       "yesAlwaysAllowTool": "はい、サーバー \"{{serverName}}\" のツール \"{{toolName}}\" を常に許可",
       "yesAlwaysAllowServer": "はい、サーバー \"{{serverName}}\" のすべてのツールを常に許可",
       "no": "いいえ (esc)"
+    },
+    "slash": {
+      "openFile": "ファイル選択を開く"
     }
   },
   "mcp": {
@@ -1057,7 +1061,7 @@
   },
   "gemini": {
     "mode": {
-      "autoGemini3Desc": "Gemini CLI が最適なモデルを決定します: gemini-3-pro, gemini-3-flash",
+      "autoGemini3Desc": "Gemini CLI が最適なモデルを決定します: gemini-3.1-pro-preview, gemini-3-flash",
       "autoGemini25Desc": "Gemini CLI が最適なモデルを決定します: gemini-2.5-pro, gemini-2.5-flash",
       "manualDesc": "手動でモデルを選択"
     }

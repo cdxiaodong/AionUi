@@ -44,6 +44,9 @@ type IMessageVO =
 // Image preview context
 export const ImagePreviewContext = createContext<{ inPreviewGroup: boolean }>({ inPreviewGroup: false });
 
+// Regenerate context: provides the ID of the last assistant text message
+export const RegenerateContext = createContext<string | null>(null);
+
 const MessageItem: React.FC<{ message: TMessage }> = React.memo(
   HOC((props) => {
     const { message } = props as { message: TMessage };
@@ -146,8 +149,19 @@ const MessageList: React.FC<{ className?: string }> = () => {
     return result;
   }, [list]);
 
+  // Compute the last assistant text message ID for the regenerate button
+  const lastAssistantMessageId = useMemo(() => {
+    for (let i = processedList.length - 1; i >= 0; i--) {
+      const item = processedList[i];
+      if ('position' in item && item.position === 'left' && item.type === 'text') {
+        return item.id;
+      }
+    }
+    return null;
+  }, [processedList]);
+
   // Use auto-scroll hook
-  const { virtuosoRef, handleScroll, showScrollButton, scrollToBottom, hideScrollButton } = useAutoScroll({
+  const { virtuosoRef, handleScroll, handleAtBottomStateChange, handleFollowOutput, showScrollButton, scrollToBottom, hideScrollButton } = useAutoScroll({
     messages: list,
     itemCount: processedList.length,
   });
@@ -175,20 +189,24 @@ const MessageList: React.FC<{ className?: string }> = () => {
       {/* Use PreviewGroup to wrap all messages for cross-message image preview */}
       <Image.PreviewGroup actionsLayout={['zoomIn', 'zoomOut', 'originalSize', 'rotateLeft', 'rotateRight']}>
         <ImagePreviewContext.Provider value={{ inPreviewGroup: true }}>
-          <Virtuoso
-            ref={virtuosoRef}
-            className='flex-1 h-full pb-10px box-border'
-            data={processedList}
-            initialTopMostItemIndex={processedList.length - 1}
-            atBottomThreshold={100}
-            increaseViewportBy={200}
-            itemContent={renderItem}
-            onScroll={handleScroll}
-            components={{
-              Header: () => <div className='h-10px' />,
-              Footer: () => <div className='h-20px' />,
-            }}
-          />
+          <RegenerateContext.Provider value={lastAssistantMessageId}>
+            <Virtuoso
+              ref={virtuosoRef}
+              className='flex-1 h-full pb-10px box-border'
+              data={processedList}
+              initialTopMostItemIndex={processedList.length - 1}
+              atBottomThreshold={100}
+              increaseViewportBy={200}
+              itemContent={renderItem}
+              followOutput={handleFollowOutput}
+              onScroll={handleScroll}
+              atBottomStateChange={handleAtBottomStateChange}
+              components={{
+                Header: () => <div className='h-10px' />,
+                Footer: () => <div className='h-20px' />,
+              }}
+            />
+          </RegenerateContext.Provider>
         </ImagePreviewContext.Provider>
       </Image.PreviewGroup>
 
