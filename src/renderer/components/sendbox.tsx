@@ -429,7 +429,7 @@ const SendBox: React.FC<{
             onBlur={handleInputBlur}
             {...compositionHandlers}
             autoSize={isSingleLine ? false : { minRows: 1, maxRows: 10 }}
-            onKeyDown={createKeyDownHandler(sendMessageHandler, slashController.onKeyDown)}
+            onKeyDown={createKeyDownHandler(sendMessageHandler, slashController.onKeyDown, () => setInput(''))}
           ></Input.TextArea>
           {isSingleLine && (
             <div className='flex items-center gap-2'>

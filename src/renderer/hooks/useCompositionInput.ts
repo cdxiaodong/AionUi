@@ -6,6 +6,7 @@ import { useRef } from 'react';
  */
 export const useCompositionInput = () => {
   const isComposing = useRef(false);
+  const lastEscapeTime = useRef(0);
 
   const compositionHandlers = {
     onCompositionStartCapture: () => {
@@ -16,10 +17,21 @@ export const useCompositionInput = () => {
     },
   };
 
-  const createKeyDownHandler = (onEnterPress: () => void, onKeyDownIntercept?: (e: React.KeyboardEvent) => boolean) => {
+  const createKeyDownHandler = (onEnterPress: () => void, onKeyDownIntercept?: (e: React.KeyboardEvent) => boolean, onDoubleEscape?: () => void) => {
     return (e: React.KeyboardEvent) => {
       if (isComposing.current) return;
       if (onKeyDownIntercept?.(e)) return;
+      if (e.key === 'Escape' && onDoubleEscape) {
+        const now = Date.now();
+        if (now - lastEscapeTime.current < 500) {
+          e.preventDefault();
+          onDoubleEscape();
+          lastEscapeTime.current = 0;
+        } else {
+          lastEscapeTime.current = now;
+        }
+        return;
+      }
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         onEnterPress();
