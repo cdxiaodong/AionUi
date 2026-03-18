@@ -319,7 +319,14 @@ export class GeminiAgentManager extends BaseAgentManager<
     }
   }
 
-  async sendMessage(data: { input: string; msg_id: string; files?: string[]; cronMeta?: CronMessageMeta }) {
+  async sendMessage(data: {
+    input: string;
+    msg_id: string;
+    files?: string[];
+    cronMeta?: CronMessageMeta;
+    suppressTaskNotification?: boolean;
+  }) {
+    this.beginTaskNotificationRun({ fromCron: !!data.cronMeta || !!data.suppressTaskNotification });
     const message: TMessage = {
       id: data.msg_id,
       type: 'text',
@@ -363,6 +370,7 @@ export class GeminiAgentManager extends BaseAgentManager<
     const result = await this.bootstrap
       .catch((e) => {
         cronBusyGuard.setProcessing(this.conversation_id, false);
+        this.clearTaskNotificationRun();
         this.emit('gemini.message', {
           type: 'error',
           data: e.message || JSON.stringify(e),
@@ -374,7 +382,14 @@ export class GeminiAgentManager extends BaseAgentManager<
           });
         });
       })
-      .then(() => super.sendMessage(data))
+      .then(() =>
+        super.sendMessage({
+          input: data.input,
+          msg_id: data.msg_id,
+          files: data.files,
+          cronMeta: data.cronMeta,
+        })
+      )
       .finally(() => {
         cronBusyGuard.setProcessing(this.conversation_id, false);
       });
@@ -592,6 +607,7 @@ export class GeminiAgentManager extends BaseAgentManager<
         // When stream finishes, check for cron commands in the accumulated message
         // Use longer delay and retry logic to ensure message is persisted
         this.checkCronWithRetry(0);
+        void this.notifyTaskCompletion();
       }
       if (data.type === 'start') {
         this.status = 'running';
@@ -627,6 +643,9 @@ export class GeminiAgentManager extends BaseAgentManager<
       if (!skipTransformTypes.includes(data.type)) {
         const tMessage = transformMessage(data as IResponseMessage);
         if (tMessage) {
+          if (tMessage.type === 'text' && tMessage.position === 'left') {
+            this.appendTaskNotificationPreview(extractTextFromMessage(tMessage));
+          }
           addOrUpdateMessage(this.conversation_id, tMessage, 'gemini');
           if (tMessage.type === 'tool_group') {
             this.handleConformationMessage(tMessage);
@@ -747,6 +766,7 @@ export class GeminiAgentManager extends BaseAgentManager<
         await this.sendMessage({
           input: feedbackMessage,
           msg_id: uuid(),
+          suppressTaskNotification: true,
         });
       }
 

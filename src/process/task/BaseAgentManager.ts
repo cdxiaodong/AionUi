@@ -8,6 +8,7 @@ import { ForkTask } from '@/worker/fork/ForkTask';
 import path from 'path';
 import { ipcBridge } from '../../common';
 import type { IConfirmation } from '../../common/chatLib';
+import { notifyConversationTaskCompletion } from '@process/services/taskNotificationService';
 
 type AgentType = 'gemini' | 'acp' | 'codex' | 'openclaw-gateway' | 'nanobot';
 
@@ -22,6 +23,9 @@ class BaseAgentManager<Data, ConfirmationOption extends any = any> extends ForkT
   protected conversation_id: string;
   protected confirmations: Array<IConfirmation<ConfirmationOption>> = [];
   status: 'pending' | 'running' | 'finished' | undefined;
+  private currentTaskNotificationPreview = '';
+  private currentTaskTriggeredByCron = false;
+  private currentTaskNotificationStartedAt = 0;
 
   /**
    * Whether this agent is in yolo mode (auto-approve)
@@ -103,6 +107,44 @@ class BaseAgentManager<Data, ConfirmationOption extends any = any> extends ForkT
 
   sendMessage(data: any) {
     return this.postMessagePromise('send.message', data);
+  }
+
+  protected beginTaskNotificationRun(options?: { fromCron?: boolean }): void {
+    this.currentTaskNotificationPreview = '';
+    this.currentTaskTriggeredByCron = !!options?.fromCron;
+    this.currentTaskNotificationStartedAt = Date.now();
+  }
+
+  protected appendTaskNotificationPreview(text: string | undefined | null): void {
+    if (!text) return;
+    this.currentTaskNotificationPreview = `${this.currentTaskNotificationPreview}${text}`.slice(-4000);
+  }
+
+  protected setTaskNotificationPreview(text: string | undefined | null): void {
+    this.currentTaskNotificationPreview = (text || '').slice(-4000);
+  }
+
+  protected clearTaskNotificationRun(): void {
+    this.currentTaskNotificationPreview = '';
+    this.currentTaskTriggeredByCron = false;
+    this.currentTaskNotificationStartedAt = 0;
+  }
+
+  protected async notifyTaskCompletion(): Promise<void> {
+    const previewText = this.currentTaskNotificationPreview;
+    const triggeredByCron = this.currentTaskTriggeredByCron;
+    const startedAt = this.currentTaskNotificationStartedAt;
+    this.clearTaskNotificationRun();
+
+    if (triggeredByCron) {
+      return;
+    }
+
+    await notifyConversationTaskCompletion({
+      conversationId: this.conversation_id,
+      previewText,
+      startedAt,
+    });
   }
 
   /**

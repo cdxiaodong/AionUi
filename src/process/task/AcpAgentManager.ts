@@ -348,6 +348,7 @@ class AcpAgentManager extends BaseAgentManager<AcpAgentManagerData, AcpPermissio
               const dbStart = Date.now();
               const isStreamTextChunk = tMessage.type === 'text' && message.type === 'content';
               if (isStreamTextChunk) {
+                this.appendTaskNotificationPreview(extractTextFromMessage(tMessage));
                 this.queueBufferedStreamTextMessage(tMessage, data.backend);
               } else {
                 this.flushBufferedStreamTextMessages();
@@ -440,14 +441,16 @@ class AcpAgentManager extends BaseAgentManager<AcpAgentManagerData, AcpPermissio
 
           // Process cron commands when turn ends (finish signal)
           // ACP streams content in chunks, so we check the accumulated content here
-          if (v.type === 'finish' && this.currentMsgContent && hasCronCommands(this.currentMsgContent)) {
+          const finalAssistantContent = this.currentMsgContent;
+
+          if (v.type === 'finish' && finalAssistantContent && hasCronCommands(finalAssistantContent)) {
             const message: TMessage = {
               id: this.currentMsgId || uuid(),
               msg_id: this.currentMsgId || uuid(),
               type: 'text',
               position: 'left',
               conversation_id: this.conversation_id,
-              content: { content: this.currentMsgContent },
+              content: { content: finalAssistantContent },
               status: 'finish',
               createdAt: Date.now(),
             };
@@ -470,6 +473,11 @@ class AcpAgentManager extends BaseAgentManager<AcpAgentManagerData, AcpPermissio
               await this.agent.sendMessage({ content: feedbackMessage });
             }
             // Reset after processing
+          }
+
+          if (v.type === 'finish') {
+            this.setTaskNotificationPreview(stripThinkTags(finalAssistantContent));
+            void this.notifyTaskCompletion();
             this.currentMsgId = null;
             this.currentMsgContent = '';
           }
@@ -549,6 +557,9 @@ class AcpAgentManager extends BaseAgentManager<AcpAgentManagerData, AcpPermissio
     cronBusyGuard.setProcessing(this.conversation_id, true);
     // Set status to running when message is being processed
     this.status = 'running';
+    this.beginTaskNotificationRun({ fromCron: !!data.cronMeta });
+    this.currentMsgId = null;
+    this.currentMsgContent = '';
     try {
       // Emit/persist user message immediately so UI can refresh without waiting
       // for ACP connection/auth/session initialization.
@@ -628,6 +639,7 @@ class AcpAgentManager extends BaseAgentManager<AcpAgentManagerData, AcpPermissio
       this.flushBufferedStreamTextMessages();
       cronBusyGuard.setProcessing(this.conversation_id, false);
       this.status = 'finished';
+      this.clearTaskNotificationRun();
       const message: IResponseMessage = {
         type: 'error',
         conversation_id: this.conversation_id,

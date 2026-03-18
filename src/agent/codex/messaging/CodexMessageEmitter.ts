@@ -37,6 +37,16 @@ export interface ICodexMessageEmitter {
    */
   sendMessageToAgent?(content: string): Promise<void>;
 
+  /**
+   * Update the task-completion preview with the final assistant message.
+   */
+  updateTaskCompletionPreview?(content: string): void;
+
+  /**
+   * Notify the user that the current task completed.
+   */
+  notifyTaskCompletion?(): Promise<void>;
+
   // ===== ApprovalStore integration =====
 
   /**

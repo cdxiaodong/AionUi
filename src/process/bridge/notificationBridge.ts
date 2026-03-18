@@ -11,8 +11,7 @@
  * and registers an IPC provider so renderer can invoke it cross-process.
  */
 
-import { Notification, app } from 'electron';
-import type { BrowserWindow } from 'electron';
+import { BrowserWindow, Notification, app } from 'electron';
 import { ipcBridge } from '@/common';
 import { ProcessConfig } from '@/process/initStorage';
 import path from 'path';
@@ -44,6 +43,31 @@ const getNotificationIcon = (): string | undefined => {
 export function setMainWindow(window: BrowserWindow | null): void {
   mainWindow = window;
 }
+
+export function shouldNotifyForBackgroundTaskCompletion(): boolean {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return true;
+  }
+
+  return !mainWindow.isVisible() || mainWindow.isMinimized() || !mainWindow.isFocused();
+}
+
+const focusMainWindow = (): void => {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  if (process.platform === 'darwin' && app.dock) {
+    void app.dock.show();
+  }
+
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+
+  mainWindow.show();
+  mainWindow.focus();
+};
 
 /**
  * Show a system notification.
@@ -90,10 +114,7 @@ export async function showNotification({
     notification.on('click', () => {
       release();
       if (mainWindow && !mainWindow.isDestroyed()) {
-        if (mainWindow.isMinimized()) {
-          mainWindow.restore();
-        }
-        mainWindow.focus();
+        focusMainWindow();
 
         if (conversationId) {
           console.log('[Notification] Clicked, navigating to conversation:', conversationId);

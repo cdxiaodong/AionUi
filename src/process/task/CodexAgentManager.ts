@@ -231,10 +231,17 @@ class CodexAgentManager extends BaseAgentManager<CodexAgentManagerData> implemen
     }
   }
 
-  async sendMessage(data: { content: string; files?: string[]; msg_id?: string; cronMeta?: CronMessageMeta }) {
+  async sendMessage(data: {
+    content: string;
+    files?: string[];
+    msg_id?: string;
+    cronMeta?: CronMessageMeta;
+    suppressTaskNotification?: boolean;
+  }) {
     cronBusyGuard.setProcessing(this.conversation_id, true);
     // Set status to running when message is being processed
     this.status = 'running';
+    this.beginTaskNotificationRun({ fromCron: !!data.cronMeta || !!data.suppressTaskNotification });
     try {
       await this.bootstrap;
       const contentToSend = data.content?.includes(AIONUI_FILES_MARKER)
@@ -298,6 +305,7 @@ class CodexAgentManager extends BaseAgentManager<CodexAgentManagerData> implemen
     } catch (e) {
       cronBusyGuard.setProcessing(this.conversation_id, false);
       this.status = 'finished';
+      this.clearTaskNotificationRun();
       // 对于某些错误类型，避免重复错误消息处理
       // 这些错误通常已经通过 MCP 连接的事件流处理过了
       const errorMsg = e instanceof Error ? e.message : String(e);
@@ -686,7 +694,16 @@ class CodexAgentManager extends BaseAgentManager<CodexAgentManagerData> implemen
     await this.sendMessage({
       content,
       msg_id: uuid(),
+      suppressTaskNotification: true,
     });
+  }
+
+  updateTaskCompletionPreview(content: string): void {
+    this.setTaskNotificationPreview(content);
+  }
+
+  async notifyTaskCompletion(): Promise<void> {
+    await super.notifyTaskCompletion();
   }
 
   // ===== ApprovalStore integration (ICodexMessageEmitter) =====

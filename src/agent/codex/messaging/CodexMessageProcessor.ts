@@ -53,6 +53,8 @@ export class CodexMessageProcessor {
       },
       false
     );
+
+    void this.messageEmitter.notifyTaskCompletion?.();
   }
 
   handleReasoningMessage(
@@ -114,6 +116,7 @@ export class CodexMessageProcessor {
 
     // Use messageEmitter to persist, maintaining architecture separation
     this.messageEmitter.persistMessage(transformedMessage);
+    this.messageEmitter.updateTaskCompletionPreview?.(msg.message || '');
 
     // Process cron commands in final message
     // This is the reliable point to detect cron commands since we have the complete message text

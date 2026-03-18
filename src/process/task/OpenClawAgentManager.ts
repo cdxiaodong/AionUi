@@ -99,6 +99,9 @@ class OpenClawAgentManager extends BaseAgentManager<OpenClawAgentManagerData> {
     // Persist messages to database
     const tMessage = transformMessage(msg);
     if (tMessage) {
+      if (tMessage.type === 'text' && tMessage.position === 'left') {
+        this.appendTaskNotificationPreview(tMessage.content.content);
+      }
       // Use addOrUpdateMessage for types that reuse the same msg_id (content streaming, agent_status updates)
       // Use addMessage for non-streaming messages that should be inserted as-is
       if ((msg.type === 'content' || msg.type === 'agent_status') && msg.msg_id) {
@@ -147,6 +150,7 @@ class OpenClawAgentManager extends BaseAgentManager<OpenClawAgentManagerData> {
     // Handle finish event
     if (msg.type === 'finish') {
       cronBusyGuard.setProcessing(this.conversation_id, false);
+      void this.notifyTaskCompletion();
     }
 
     // Emit signal events to frontend
@@ -186,6 +190,7 @@ class OpenClawAgentManager extends BaseAgentManager<OpenClawAgentManagerData> {
     cronBusyGuard.setProcessing(this.conversation_id, true);
     // Set status to running when message is being processed
     this.status = 'running';
+    this.beginTaskNotificationRun();
     try {
       await this.bootstrap;
 
@@ -214,6 +219,7 @@ class OpenClawAgentManager extends BaseAgentManager<OpenClawAgentManagerData> {
     } catch (error) {
       cronBusyGuard.setProcessing(this.conversation_id, false);
       this.status = 'finished';
+      this.clearTaskNotificationRun();
 
       const errorMsg = error instanceof Error ? error.message : String(error);
       this.emitErrorMessage(`Failed to send message: ${errorMsg}`);

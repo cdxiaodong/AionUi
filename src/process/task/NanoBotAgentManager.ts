@@ -62,6 +62,9 @@ class NanoBotAgentManager extends BaseAgentManager<NanoBotAgentManagerData> {
     // Persist messages to database
     const tMessage = transformMessage(msg);
     if (tMessage) {
+      if (tMessage.type === 'text' && tMessage.position === 'left') {
+        this.appendTaskNotificationPreview(tMessage.content.content);
+      }
       if (msg.type === 'content' && msg.msg_id) {
         addOrUpdateMessage(this.conversation_id, tMessage);
       } else {
@@ -79,6 +82,7 @@ class NanoBotAgentManager extends BaseAgentManager<NanoBotAgentManagerData> {
     // Handle finish event
     if (msg.type === 'finish') {
       cronBusyGuard.setProcessing(this.conversation_id, false);
+      void this.notifyTaskCompletion();
     }
 
     // Emit signal events to frontend
@@ -87,6 +91,7 @@ class NanoBotAgentManager extends BaseAgentManager<NanoBotAgentManagerData> {
 
   async sendMessage(data: { content: string; files?: string[]; msg_id?: string }) {
     cronBusyGuard.setProcessing(this.conversation_id, true);
+    this.beginTaskNotificationRun();
     try {
       await this.bootstrap;
 
@@ -110,6 +115,7 @@ class NanoBotAgentManager extends BaseAgentManager<NanoBotAgentManagerData> {
       // are emitted asynchronously via handleStreamEvent/handleSignalEvent.
       this.agent.sendMessage({ content: data.content }).catch((error) => {
         cronBusyGuard.setProcessing(this.conversation_id, false);
+        this.clearTaskNotificationRun();
         const errorMsg = error instanceof Error ? error.message : String(error);
         this.emitErrorMessage(`Failed to send message: ${errorMsg}`);
       });
@@ -117,6 +123,7 @@ class NanoBotAgentManager extends BaseAgentManager<NanoBotAgentManagerData> {
       return { success: true, data: null as null };
     } catch (error) {
       cronBusyGuard.setProcessing(this.conversation_id, false);
+      this.clearTaskNotificationRun();
 
       const errorMsg = error instanceof Error ? error.message : String(error);
       this.emitErrorMessage(`Failed to send message: ${errorMsg}`);
