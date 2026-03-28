@@ -26,6 +26,8 @@ import type { FileMetadata } from '@renderer/services/FileService';
 import { useUploadState } from '@renderer/hooks/file/useUploadState';
 import UploadProgressBar from '@renderer/components/media/UploadProgressBar';
 import { allSupportedExts } from '@renderer/services/FileService';
+import SpeechInputButton from '@/renderer/components/chat/SpeechInputButton';
+import { appendSpeechTranscript } from '@/renderer/hooks/system/useSpeechInput';
 import './sendbox.css';
 
 const constVoid = (): void => undefined;
@@ -73,7 +75,7 @@ const SendBox: React.FC<{
   const layout = useLayoutContext();
   const isMobile = layout?.isMobile ?? false;
   const conversationContext = useConversationContextSafe();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [isSingleLine, setIsSingleLine] = useState(!defaultMultiLine);
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -456,6 +458,15 @@ const SendBox: React.FC<{
     }
   };
 
+  const handleSpeechTranscript = useCallback(
+    (transcript: string) => {
+      const currentValue = latestInputRef.current;
+      setInputRef.current(appendSpeechTranscript(currentValue, transcript));
+    },
+    [latestInputRef, setInputRef]
+  );
+  const speechLocale = i18n?.language || 'en-US';
+
   // Calculate button disabled state
   const isButtonDisabled = disabled || isUploading || (!input.trim() && domSnippets.length === 0);
 
@@ -596,6 +607,11 @@ const SendBox: React.FC<{
           ></Input.TextArea>
           {isSingleLine && (
             <div className='flex items-center gap-2'>
+              <SpeechInputButton
+                disabled={disabled || isLoading || loading || isUploading}
+                locale={speechLocale}
+                onTranscript={handleSpeechTranscript}
+              />
               {sendButtonPrefix}
               {isLoading || loading ? (
                 <Button
@@ -615,6 +631,11 @@ const SendBox: React.FC<{
           <div className='flex items-center justify-between gap-2 w-full'>
             <div className={isMobile ? 'sendbox-tools sendbox-tools-scroll-mobile' : 'sendbox-tools'}>{tools}</div>
             <div className='flex items-center gap-2'>
+              <SpeechInputButton
+                disabled={disabled || isLoading || loading || isUploading}
+                locale={speechLocale}
+                onTranscript={handleSpeechTranscript}
+              />
               {sendButtonPrefix}
               {isLoading || loading ? (
                 <Button
