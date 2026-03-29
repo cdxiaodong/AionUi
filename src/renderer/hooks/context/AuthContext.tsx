@@ -65,8 +65,6 @@ function clearAuthCache(): void {
       }
     }
     keysToRemove.forEach((key) => localStorage.removeItem(key));
-
-    console.log('Auth cache cleared successfully');
   } catch (error) {
     console.error('Failed to clear auth cache:', error);
   }

@@ -4,40 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { parse as parseCookie } from 'cookie';
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from '@process/webserver/config/constants';
-
-// Try to import cookie module, but provide fallback if unavailable
-let cookieModule: {
-  parse: (cookieString: string) => Record<string, string>;
-} | null = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const importedCookie = require('cookie');
-  if (importedCookie && typeof importedCookie.parse === 'function') {
-    cookieModule = importedCookie;
-  }
-} catch {
-  // Cookie module not available, will use native API
-}
-
-// Native cookie parser fallback - works in all browsers
-function parseCookieNative(cookieString: string): Record<string, string> {
-  const cookies: Record<string, string> = {};
-  if (!cookieString) {
-    return cookies;
-  }
-
-  const pairs = cookieString.split(';');
-  for (const pair of pairs) {
-    const [key, ...valueParts] = pair.split('=');
-    if (key) {
-      const trimmedKey = key.trim();
-      const value = valueParts.join('=').trim();
-      cookies[trimmedKey] = value;
-    }
-  }
-  return cookies;
-}
 
 // Read cookie by name in browser environment with error handling
 // 在浏览器环境中根据名称读取指定 Cookie，带错误处理
@@ -52,9 +20,7 @@ function readCookie(name: string): string | null {
       return null;
     }
 
-    // Use cookie module if available, otherwise use native parser
-    const cookies = cookieModule ? cookieModule.parse(cookieString) : parseCookieNative(cookieString);
-
+    const cookies = parseCookie(cookieString);
     return cookies[name] ?? null;
   } catch (error) {
     console.error('Failed to read cookie:', error);
