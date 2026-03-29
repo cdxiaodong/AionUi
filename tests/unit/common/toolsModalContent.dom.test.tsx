@@ -166,7 +166,7 @@ vi.mock('@/renderer/components/base/AionSelect', () => {
     value,
     onChange,
   }: React.PropsWithChildren<{ value?: string; onChange?: (value: string) => void }>) => (
-    <select aria-label='image-model' onChange={(event) => onChange?.(event.target.value)} value={value}>
+    <select onChange={(event) => onChange?.(event.target.value)} value={value}>
       {children}
     </select>
   );
@@ -345,7 +345,7 @@ describe('ToolsModalContent image generation status refresh', () => {
   it('persists speech-to-text provider settings when the user switches provider and updates credentials', async () => {
     render(<ToolsModalContent />);
 
-    const providerSelect = await screen.findByLabelText('settings.speechToTextProvider');
+    const providerSelect = await screen.findByLabelText(/settings\.speechToTextProvider/);
     fireEvent.change(providerSelect, { target: { value: 'deepgram' } });
 
     await waitFor(() => {
@@ -357,7 +357,7 @@ describe('ToolsModalContent image generation status refresh', () => {
       );
     });
 
-    const apiKeyInput = await screen.findByLabelText('settings.speechToTextApiKey');
+    const apiKeyInput = await screen.findByLabelText(/settings\.speechToTextApiKey/);
     fireEvent.change(apiKeyInput, { target: { value: 'deepgram-secret' } });
 
     await waitFor(() => {
@@ -376,15 +376,15 @@ describe('ToolsModalContent image generation status refresh', () => {
   it('shows required and optional markers for OpenAI and Deepgram speech-to-text fields', async () => {
     render(<ToolsModalContent />);
 
-    await screen.findByLabelText('settings.speechToTextApiKey');
+    await screen.findByLabelText(/settings\.speechToTextApiKey/);
 
     expect(screen.getAllByText('settings.speechToTextRequired')).toHaveLength(1);
     expect(screen.getAllByText('settings.speechToTextOptional')).toHaveLength(3);
 
-    const providerSelect = screen.getByLabelText('settings.speechToTextProvider');
+    const providerSelect = screen.getByLabelText(/settings\.speechToTextProvider/);
     fireEvent.change(providerSelect, { target: { value: 'deepgram' } });
 
-    await screen.findByLabelText('settings.speechToTextDetectLanguage');
+    await screen.findByLabelText(/settings\.speechToTextDetectLanguage/);
 
     expect(screen.getAllByText('settings.speechToTextRequired')).toHaveLength(1);
     expect(screen.getAllByText('settings.speechToTextOptional')).toHaveLength(6);
