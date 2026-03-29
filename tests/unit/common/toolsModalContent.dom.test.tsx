@@ -378,15 +378,15 @@ describe('ToolsModalContent image generation status refresh', () => {
 
     await screen.findByLabelText(/settings\.speechToTextApiKey/);
 
-    expect(screen.getAllByText('settings.speechToTextRequired')).toHaveLength(1);
-    expect(screen.getAllByText('settings.speechToTextOptional')).toHaveLength(3);
+    expect(screen.getAllByText(/settings\.speechToTextRequired/)).toHaveLength(1);
+    expect(screen.getAllByText(/settings\.speechToTextOptional/)).toHaveLength(3);
 
     const providerSelect = screen.getByLabelText(/settings\.speechToTextProvider/);
     fireEvent.change(providerSelect, { target: { value: 'deepgram' } });
 
     await screen.findByLabelText(/settings\.speechToTextDetectLanguage/);
 
-    expect(screen.getAllByText('settings.speechToTextRequired')).toHaveLength(1);
-    expect(screen.getAllByText('settings.speechToTextOptional')).toHaveLength(6);
+    expect(screen.getAllByText(/settings\.speechToTextRequired/)).toHaveLength(1);
+    expect(screen.getAllByText(/settings\.speechToTextOptional/)).toHaveLength(6);
   });
 });
