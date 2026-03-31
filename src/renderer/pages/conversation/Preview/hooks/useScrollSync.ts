@@ -59,8 +59,8 @@ interface UseScrollSyncReturn {
  * 使用防抖机制避免循环触发和性能问题
  * Uses debounce mechanism to avoid circular triggers and performance issues
  *
- * TODO: 考虑使用 requestAnimationFrame 替代 setTimeout 以提升性能
- * TODO: Consider using requestAnimationFrame instead of setTimeout for better performance
+ * 优先使用 requestAnimationFrame 释放同步锁，必要时再退回到 setTimeout
+ * Prefer requestAnimationFrame to release the sync lock, with setTimeout as a compatibility fallback
  *
  * @param options - 滚动同步配置 / Scroll sync configuration
  * @returns 滚动事件处理函数 / Scroll event handlers
