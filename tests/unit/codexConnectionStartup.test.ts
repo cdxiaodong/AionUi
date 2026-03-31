@@ -78,6 +78,14 @@ describe('CodexConnection.start', () => {
     await expect(startPromise).rejects.toThrow('Codex process exited during startup (code: 1, signal: none)');
   });
 
+  it('rejects immediately with signal details when process is killed during startup', async () => {
+    const startPromise = conn.start('codex', '/tmp');
+
+    lastChild.emit('exit', null, 'SIGTERM');
+
+    await expect(startPromise).rejects.toThrow('Codex process exited during startup (code: null, signal: SIGTERM)');
+  });
+
   it('rejects with specific message when spawn emits error event', async () => {
     const startPromise = conn.start('codex', '/tmp');
 

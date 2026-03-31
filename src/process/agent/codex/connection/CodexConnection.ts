@@ -215,10 +215,8 @@ export class CodexConnection {
         this.child.on('exit', (code, signal) => {
           // Reject the start promise immediately on unexpected exit during startup,
           // instead of waiting for the 5-second timeout with a generic error message.
-          if (code !== 0 && code !== null) {
-            reject(new Error(`Codex process exited during startup (code: ${code}, signal: ${signal || 'none'})`));
-            this.handleProcessExit(code, signal);
-          }
+          reject(new Error(`Codex process exited during startup (code: ${code}, signal: ${signal || 'none'})`));
+          this.handleProcessExit(code, signal);
         });
 
         this.child.stderr?.on('data', (d) => {
