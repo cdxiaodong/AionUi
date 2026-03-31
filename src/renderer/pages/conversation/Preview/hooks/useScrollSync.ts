@@ -56,11 +56,11 @@ interface UseScrollSyncReturn {
  * 在编辑器和预览器之间同步滚动位置，基于滚动百分比进行同步
  * Synchronizes scroll position between editor and preview based on scroll percentage
  *
- * 使用防抖机制避免循环触发和性能问题
- * Uses debounce mechanism to avoid circular triggers and performance issues
- *
- * 优先使用 requestAnimationFrame 释放同步锁，必要时再退回到 setTimeout
- * Prefer requestAnimationFrame to release the sync lock, with setTimeout as a compatibility fallback
+ * 使用防抖机制避免循环触发和性能问题；优先使用 requestAnimationFrame 解锁同步状态，
+ * 并在不可用时降级到 setTimeout + SCROLL_SYNC_DEBOUNCE，确保兼容性与安全降级。
+ * Uses debounce to avoid circular triggers and performance issues; it prefers
+ * requestAnimationFrame to unlock sync state, and falls back to
+ * setTimeout + SCROLL_SYNC_DEBOUNCE when unavailable for compatibility and safe degradation.
  *
  * @param options - 滚动同步配置 / Scroll sync configuration
  * @returns 滚动事件处理函数 / Scroll event handlers
