@@ -94,6 +94,26 @@ describe('applicationBridge start-on-boot helpers', () => {
     });
   });
 
+  it('detects login launches on packaged macOS', async () => {
+    setPlatform('darwin');
+    mockBridgeDependencies();
+
+    vi.doMock('electron', () => ({
+      app: {
+        isPackaged: true,
+        getLoginItemSettings: vi.fn(() => ({
+          openAtLogin: true,
+          wasOpenedAtLogin: true,
+        })),
+        setLoginItemSettings: vi.fn(),
+      },
+    }));
+
+    const { wasLaunchedAtLogin } = await import('@process/bridge/applicationBridge');
+
+    expect(wasLaunchedAtLogin()).toBe(true);
+  });
+
   it('updates Windows start-on-boot via login item settings', async () => {
     setPlatform('win32');
     mockBridgeDependencies();
@@ -114,16 +134,47 @@ describe('applicationBridge start-on-boot helpers', () => {
       },
     }));
 
-    const { setStartOnBootEnabled } = await import('@process/bridge/applicationBridge');
+    const { START_ON_BOOT_WINDOWS_ARG, setStartOnBootEnabled } = await import('@process/bridge/applicationBridge');
     const status = setStartOnBootEnabled(true);
 
-    expect(setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: true });
+    expect(setLoginItemSettings).toHaveBeenCalledWith({
+      openAtLogin: true,
+      args: [START_ON_BOOT_WINDOWS_ARG],
+      enabled: true,
+    });
     expect(status).toEqual({
       supported: true,
       enabled: true,
       isPackaged: true,
       platform: 'win32',
     });
+  });
+
+  it('detects login launches on packaged Windows via startup argument', async () => {
+    setPlatform('win32');
+    mockBridgeDependencies();
+
+    const originalArgv = process.argv;
+    process.argv = [...originalArgv, '--start-on-boot'];
+
+    vi.doMock('electron', () => ({
+      app: {
+        isPackaged: true,
+        getLoginItemSettings: vi.fn(() => ({
+          openAtLogin: true,
+          executableWillLaunchAtLogin: true,
+        })),
+        setLoginItemSettings: vi.fn(),
+      },
+    }));
+
+    try {
+      const { wasLaunchedAtLogin } = await import('@process/bridge/applicationBridge');
+
+      expect(wasLaunchedAtLogin()).toBe(true);
+    } finally {
+      process.argv = originalArgv;
+    }
   });
 
   it('returns unsupported status on non-desktop-login platforms', async () => {
