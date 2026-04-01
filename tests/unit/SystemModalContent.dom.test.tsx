@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 
+const mockIsElectronDesktop = vi.fn(() => true);
+
 // Mock window.matchMedia for Arco Design responsive observer
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -61,7 +63,7 @@ vi.mock('@/renderer/components/settings/SettingsModal/settingsViewContext', () =
 }));
 
 vi.mock('@/renderer/utils/platform', () => ({
-  isElectronDesktop: () => true,
+  isElectronDesktop: () => mockIsElectronDesktop(),
 }));
 
 // IPC Bridge mocks
@@ -177,6 +179,7 @@ describe('SystemModalContent', () => {
     vi.clearAllMocks();
     swrCache = {};
     swrMutateCallback = null;
+    mockIsElectronDesktop.mockReturnValue(true);
 
     // Default mock implementations
     mockGetCdpStatus.mockResolvedValue({
@@ -270,6 +273,77 @@ describe('SystemModalContent', () => {
     const startOnBootSwitch = startOnBootSection?.querySelector('button[role="switch"]');
     expect(startOnBootSwitch).toHaveAttribute('aria-checked', 'false');
     expect(startOnBootSwitch).toBeDisabled();
+  });
+
+  it('should not request start-on-boot status outside the desktop runtime', async () => {
+    mockIsElectronDesktop.mockReturnValue(false);
+
+    render(<SystemModalContent />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('language-switcher')).toBeInTheDocument();
+    });
+
+    expect(mockGetStartOnBootStatus).not.toHaveBeenCalled();
+  });
+
+  it('should show the backend error and revert the switch when updating start on boot fails', async () => {
+    mockSetStartOnBoot.mockResolvedValue({
+      success: false,
+      msg: 'login item update failed',
+      data: {
+        supported: true,
+        enabled: false,
+        isPackaged: true,
+        platform: 'darwin',
+      },
+    });
+
+    const { Message } = await import('@arco-design/web-react');
+
+    render(<SystemModalContent />);
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.startOnBoot')).toBeInTheDocument();
+    });
+
+    const startOnBootSection = screen.getByText('settings.startOnBoot').closest('.flex-1')?.parentElement;
+    const startOnBootSwitch = startOnBootSection?.querySelector('button[role="switch"]');
+
+    await act(async () => {
+      fireEvent.click(startOnBootSwitch!);
+    });
+
+    await waitFor(() => {
+      expect(Message.error).toHaveBeenCalledWith('login item update failed');
+    });
+
+    expect(startOnBootSwitch).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('should show the fallback error when updating start on boot rejects', async () => {
+    mockSetStartOnBoot.mockRejectedValue(new Error('bridge rejected'));
+
+    const { Message } = await import('@arco-design/web-react');
+
+    render(<SystemModalContent />);
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.startOnBoot')).toBeInTheDocument();
+    });
+
+    const startOnBootSection = screen.getByText('settings.startOnBoot').closest('.flex-1')?.parentElement;
+    const startOnBootSwitch = startOnBootSection?.querySelector('button[role="switch"]');
+
+    await act(async () => {
+      fireEvent.click(startOnBootSwitch!);
+    });
+
+    await waitFor(() => {
+      expect(Message.error).toHaveBeenCalledWith('settings.startOnBootUpdateFailed');
+    });
+
+    expect(startOnBootSwitch).toHaveAttribute('aria-checked', 'false');
   });
 
   it('should render DevTools toggle button', async () => {

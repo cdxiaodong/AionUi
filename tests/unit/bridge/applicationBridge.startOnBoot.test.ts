@@ -7,6 +7,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const originalPlatform = process.platform;
+const originalArgv = [...process.argv];
 
 const setPlatform = (platform: NodeJS.Platform): void => {
   Object.defineProperty(process, 'platform', {
@@ -21,6 +22,7 @@ describe('applicationBridge start-on-boot helpers', () => {
       value: originalPlatform,
       configurable: true,
     });
+    process.argv = [...originalArgv];
     vi.resetModules();
     vi.clearAllMocks();
     vi.doUnmock('electron');
@@ -119,6 +121,10 @@ describe('applicationBridge start-on-boot helpers', () => {
     mockBridgeDependencies();
 
     let openAtLogin = false;
+    const getLoginItemSettings = vi.fn(() => ({
+      openAtLogin,
+      executableWillLaunchAtLogin: openAtLogin,
+    }));
     const setLoginItemSettings = vi.fn(({ openAtLogin: nextValue }: { openAtLogin: boolean }) => {
       openAtLogin = nextValue;
     });
@@ -126,10 +132,7 @@ describe('applicationBridge start-on-boot helpers', () => {
     vi.doMock('electron', () => ({
       app: {
         isPackaged: true,
-        getLoginItemSettings: vi.fn(() => ({
-          openAtLogin,
-          executableWillLaunchAtLogin: openAtLogin,
-        })),
+        getLoginItemSettings,
         setLoginItemSettings,
       },
     }));
@@ -148,6 +151,7 @@ describe('applicationBridge start-on-boot helpers', () => {
       isPackaged: true,
       platform: 'win32',
     });
+    expect(getLoginItemSettings).toHaveBeenCalledWith({ args: [START_ON_BOOT_WINDOWS_ARG] });
   });
 
   it('detects login launches on packaged Windows via startup argument', async () => {
@@ -196,6 +200,192 @@ describe('applicationBridge start-on-boot helpers', () => {
       enabled: false,
       isPackaged: true,
       platform: 'linux',
+    });
+  });
+
+  it('returns false for login-launch detection when app is not packaged', async () => {
+    setPlatform('darwin');
+    mockBridgeDependencies();
+
+    vi.doMock('electron', () => ({
+      app: {
+        isPackaged: false,
+        getLoginItemSettings: vi.fn(() => ({ wasOpenedAtLogin: true })),
+        setLoginItemSettings: vi.fn(),
+      },
+    }));
+
+    const { wasLaunchedAtLogin } = await import('@process/bridge/applicationBridge');
+
+    expect(wasLaunchedAtLogin()).toBe(false);
+  });
+
+  it('registers start-on-boot IPC handlers that return current status', async () => {
+    setPlatform('darwin');
+
+    const capturedHandlers: Record<string, (payload?: { enabled: boolean }) => Promise<unknown>> = {};
+
+    vi.doMock('@/common', () => ({
+      ipcBridge: {
+        application: {
+          restart: { provider: vi.fn() },
+          isDevToolsOpened: { provider: vi.fn() },
+          openDevTools: { provider: vi.fn() },
+          getZoomFactor: { provider: vi.fn() },
+          setZoomFactor: { provider: vi.fn() },
+          getCdpStatus: { provider: vi.fn() },
+          updateCdpConfig: { provider: vi.fn() },
+          getStartOnBootStatus: {
+            provider: vi.fn((fn: (payload?: { enabled: boolean }) => Promise<unknown>) => {
+              capturedHandlers.getStartOnBootStatus = fn;
+            }),
+          },
+          setStartOnBoot: {
+            provider: vi.fn((fn: (payload: { enabled: boolean }) => Promise<unknown>) => {
+              capturedHandlers.setStartOnBoot = fn;
+            }),
+          },
+        },
+      },
+    }));
+
+    vi.doMock('@process/utils/initStorage', () => ({
+      ProcessConfig: {
+        get: vi.fn(),
+        set: vi.fn(),
+      },
+    }));
+
+    vi.doMock('@process/utils/zoom', () => ({
+      getZoomFactor: vi.fn(() => 1),
+      setZoomFactor: vi.fn((factor: number) => factor),
+    }));
+
+    vi.doMock('@process/utils/configureChromium', () => ({
+      getCdpStatus: vi.fn(() => ({
+        enabled: false,
+        port: null,
+        startupEnabled: false,
+        instances: [],
+        configEnabled: false,
+        isDevMode: false,
+      })),
+      updateCdpConfig: vi.fn(),
+    }));
+
+    vi.doMock('@process/bridge/applicationBridgeCore', () => ({
+      initApplicationBridgeCore: vi.fn(),
+    }));
+
+    vi.doMock('electron', () => ({
+      app: {
+        isPackaged: true,
+        getLoginItemSettings: vi.fn(() => ({ openAtLogin: true, wasOpenedAtLogin: true })),
+        setLoginItemSettings: vi.fn(),
+      },
+    }));
+
+    const { initApplicationBridge } = await import('@process/bridge/applicationBridge');
+    initApplicationBridge({
+      getTask: vi.fn(),
+      getOrBuildTask: vi.fn(),
+      addTask: vi.fn(),
+      kill: vi.fn(),
+      clear: vi.fn(),
+      listTasks: vi.fn(() => []),
+    });
+
+    await expect(capturedHandlers.getStartOnBootStatus?.()).resolves.toEqual({
+      success: true,
+      data: {
+        supported: true,
+        enabled: true,
+        isPackaged: true,
+        platform: 'darwin',
+      },
+    });
+  });
+
+  it('returns an unsupported response from the set-start-on-boot IPC handler on linux', async () => {
+    setPlatform('linux');
+
+    const capturedHandlers: Record<string, (payload: { enabled: boolean }) => Promise<unknown>> = {};
+
+    vi.doMock('@/common', () => ({
+      ipcBridge: {
+        application: {
+          restart: { provider: vi.fn() },
+          isDevToolsOpened: { provider: vi.fn() },
+          openDevTools: { provider: vi.fn() },
+          getZoomFactor: { provider: vi.fn() },
+          setZoomFactor: { provider: vi.fn() },
+          getCdpStatus: { provider: vi.fn() },
+          updateCdpConfig: { provider: vi.fn() },
+          getStartOnBootStatus: { provider: vi.fn() },
+          setStartOnBoot: {
+            provider: vi.fn((fn: (payload: { enabled: boolean }) => Promise<unknown>) => {
+              capturedHandlers.setStartOnBoot = fn;
+            }),
+          },
+        },
+      },
+    }));
+
+    vi.doMock('@process/utils/initStorage', () => ({
+      ProcessConfig: {
+        get: vi.fn(),
+        set: vi.fn(),
+      },
+    }));
+
+    vi.doMock('@process/utils/zoom', () => ({
+      getZoomFactor: vi.fn(() => 1),
+      setZoomFactor: vi.fn((factor: number) => factor),
+    }));
+
+    vi.doMock('@process/utils/configureChromium', () => ({
+      getCdpStatus: vi.fn(() => ({
+        enabled: false,
+        port: null,
+        startupEnabled: false,
+        instances: [],
+        configEnabled: false,
+        isDevMode: false,
+      })),
+      updateCdpConfig: vi.fn(),
+    }));
+
+    vi.doMock('@process/bridge/applicationBridgeCore', () => ({
+      initApplicationBridgeCore: vi.fn(),
+    }));
+
+    vi.doMock('electron', () => ({
+      app: {
+        isPackaged: true,
+        getLoginItemSettings: vi.fn(),
+        setLoginItemSettings: vi.fn(),
+      },
+    }));
+
+    const { initApplicationBridge } = await import('@process/bridge/applicationBridge');
+    initApplicationBridge({
+      getTask: vi.fn(),
+      getOrBuildTask: vi.fn(),
+      addTask: vi.fn(),
+      kill: vi.fn(),
+      clear: vi.fn(),
+      listTasks: vi.fn(() => []),
+    });
+
+    await expect(capturedHandlers.setStartOnBoot?.({ enabled: true })).resolves.toEqual({
+      success: false,
+      msg: 'Start on boot is only available in packaged macOS and Windows apps.',
+      data: {
+        supported: false,
+        enabled: false,
+        isPackaged: true,
+        platform: 'linux',
+      },
     });
   });
 });
