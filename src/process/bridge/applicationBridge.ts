@@ -12,8 +12,52 @@ import { ProcessConfig } from '@process/utils/initStorage';
 import { getZoomFactor, setZoomFactor } from '@process/utils/zoom';
 import { getCdpStatus, updateCdpConfig } from '@process/utils/configureChromium';
 import { initApplicationBridgeCore } from './applicationBridgeCore';
+import type { IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 
 let mainWindowRef: BrowserWindow | null = null;
+
+const START_ON_BOOT_UNSUPPORTED_MESSAGE = 'Start on boot is only available in packaged macOS and Windows apps.';
+
+const isStartOnBootSupported = (): boolean => {
+  return app.isPackaged && (process.platform === 'darwin' || process.platform === 'win32');
+};
+
+export function getStartOnBootStatus(): IStartOnBootStatus {
+  if (!isStartOnBootSupported()) {
+    return {
+      supported: false,
+      enabled: false,
+      isPackaged: app.isPackaged,
+      platform: process.platform,
+    };
+  }
+
+  const settings = app.getLoginItemSettings();
+  const enabled =
+    process.platform === 'win32'
+      ? Boolean(settings.openAtLogin || settings.executableWillLaunchAtLogin)
+      : Boolean(settings.openAtLogin);
+
+  return {
+    supported: true,
+    enabled,
+    isPackaged: app.isPackaged,
+    platform: process.platform,
+  };
+}
+
+export function setStartOnBootEnabled(enabled: boolean): IStartOnBootStatus {
+  const currentStatus = getStartOnBootStatus();
+  if (!currentStatus.supported) {
+    return currentStatus;
+  }
+
+  app.setLoginItemSettings({
+    openAtLogin: enabled,
+  });
+
+  return getStartOnBootStatus();
+}
 
 export function setApplicationMainWindow(win: BrowserWindow): void {
   mainWindowRef = win;
@@ -98,6 +142,26 @@ export function initApplicationBridge(workerTaskManager: IWorkerTaskManager): vo
     try {
       const updatedConfig = updateCdpConfig(config);
       return { success: true, data: updatedConfig };
+    } catch (e) {
+      return { success: false, msg: e.message || e.toString() };
+    }
+  });
+
+  ipcBridge.application.getStartOnBootStatus.provider(async () => {
+    try {
+      return { success: true, data: getStartOnBootStatus() };
+    } catch (e) {
+      return { success: false, msg: e.message || e.toString() };
+    }
+  });
+
+  ipcBridge.application.setStartOnBoot.provider(async ({ enabled }) => {
+    try {
+      const status = setStartOnBootEnabled(enabled);
+      if (!status.supported) {
+        return { success: false, msg: START_ON_BOOT_UNSUPPORTED_MESSAGE, data: status };
+      }
+      return { success: true, data: status };
     } catch (e) {
       return { success: false, msg: e.message || e.toString() };
     }
