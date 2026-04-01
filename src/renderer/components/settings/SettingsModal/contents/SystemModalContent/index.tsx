@@ -243,7 +243,7 @@ const SystemModalContent: React.FC = () => {
           <div className='px-[12px] md:px-[32px] py-16px bg-2 rd-16px space-y-12px'>
             <div className='w-full flex flex-col divide-y divide-border-2'>
               {preferenceItems.map((item) => (
-                <PreferenceRow key={item.key} label={item.label}>
+                <PreferenceRow key={item.key} label={item.label} description={item.description}>
                   {item.component}
                 </PreferenceRow>
               ))}

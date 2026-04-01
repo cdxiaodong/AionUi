@@ -17,10 +17,35 @@ import type { IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 let mainWindowRef: BrowserWindow | null = null;
 
 const START_ON_BOOT_UNSUPPORTED_MESSAGE = 'Start on boot is only available in packaged macOS and Windows apps.';
+export const START_ON_BOOT_WINDOWS_ARG = '--start-on-boot';
 
 const isStartOnBootSupported = (): boolean => {
   return app.isPackaged && (process.platform === 'darwin' || process.platform === 'win32');
 };
+
+const getStartOnBootWindowsArgs = (): string[] => [START_ON_BOOT_WINDOWS_ARG];
+
+const getLoginItemSettings = () => {
+  return process.platform === 'win32'
+    ? app.getLoginItemSettings({ args: getStartOnBootWindowsArgs() })
+    : app.getLoginItemSettings();
+};
+
+export function wasLaunchedAtLogin(): boolean {
+  if (!app.isPackaged) {
+    return false;
+  }
+
+  if (process.platform === 'darwin') {
+    return Boolean(getLoginItemSettings().wasOpenedAtLogin);
+  }
+
+  if (process.platform === 'win32') {
+    return process.argv.includes(START_ON_BOOT_WINDOWS_ARG);
+  }
+
+  return false;
+}
 
 export function getStartOnBootStatus(): IStartOnBootStatus {
   if (!isStartOnBootSupported()) {
@@ -32,7 +57,7 @@ export function getStartOnBootStatus(): IStartOnBootStatus {
     };
   }
 
-  const settings = app.getLoginItemSettings();
+  const settings = getLoginItemSettings();
   const enabled =
     process.platform === 'win32'
       ? Boolean(settings.openAtLogin || settings.executableWillLaunchAtLogin)
@@ -54,6 +79,12 @@ export function setStartOnBootEnabled(enabled: boolean): IStartOnBootStatus {
 
   app.setLoginItemSettings({
     openAtLogin: enabled,
+    ...(process.platform === 'win32'
+      ? {
+          args: getStartOnBootWindowsArgs(),
+          enabled: true,
+        }
+      : {}),
   });
 
   return getStartOnBootStatus();

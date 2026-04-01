@@ -60,6 +60,10 @@ vi.mock('@/renderer/components/settings/SettingsModal/settingsViewContext', () =
   useSettingsViewMode: () => 'modal',
 }));
 
+vi.mock('@/renderer/utils/platform', () => ({
+  isElectronDesktop: () => true,
+}));
+
 // IPC Bridge mocks
 const mockGetCdpStatus = vi.fn();
 const mockUpdateCdpConfig = vi.fn();
@@ -78,6 +82,8 @@ const mockSetCronNotificationEnabled = vi.fn();
 const mockOpenFile = vi.fn();
 const mockShowOpen = vi.fn();
 const mockUpdateSystemInfo = vi.fn();
+const mockGetStartOnBootStatus = vi.fn();
+const mockSetStartOnBoot = vi.fn();
 
 vi.mock('@/common/config/storage', () => ({
   ConfigStorage: {
@@ -93,6 +99,8 @@ vi.mock('@/common', () => ({
       updateCdpConfig: { invoke: (...args: any[]) => mockUpdateCdpConfig(...args) },
       restart: { invoke: (...args: any[]) => mockRestart(...args) },
       systemInfo: { invoke: (...args: any[]) => mockSystemInfo(...args) },
+      getStartOnBootStatus: { invoke: (...args: any[]) => mockGetStartOnBootStatus(...args) },
+      setStartOnBoot: { invoke: (...args: any[]) => mockSetStartOnBoot(...args) },
       isDevToolsOpened: { invoke: (...args: any[]) => mockIsDevToolsOpened(...args) },
       openDevTools: { invoke: (...args: any[]) => mockOpenDevTools(...args) },
       devToolsStateChanged: { on: (...args: any[]) => mockDevToolsStateChangedOn(...args) },
@@ -185,6 +193,24 @@ describe('SystemModalContent', () => {
       workDir: '/tmp/work',
       logDir: '/tmp/logs',
     });
+    mockGetStartOnBootStatus.mockResolvedValue({
+      success: true,
+      data: {
+        supported: true,
+        enabled: false,
+        isPackaged: true,
+        platform: 'darwin',
+      },
+    });
+    mockSetStartOnBoot.mockResolvedValue({
+      success: true,
+      data: {
+        supported: true,
+        enabled: true,
+        isPackaged: true,
+        platform: 'darwin',
+      },
+    });
     mockIsDevToolsOpened.mockResolvedValue(false);
     mockGetCloseToTray.mockResolvedValue(false);
     mockGetNotificationEnabled.mockResolvedValue(true);
@@ -199,7 +225,51 @@ describe('SystemModalContent', () => {
     });
 
     expect(screen.getByText('settings.language')).toBeInTheDocument();
+    expect(screen.getByText('settings.startOnBoot')).toBeInTheDocument();
     expect(screen.getByText('settings.closeToTray')).toBeInTheDocument();
+  });
+
+  it('should toggle start on boot when the switch is clicked', async () => {
+    render(<SystemModalContent />);
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.startOnBoot')).toBeInTheDocument();
+    });
+
+    const startOnBootSection = screen.getByText('settings.startOnBoot').closest('.flex-1')?.parentElement;
+    const startOnBootSwitch = startOnBootSection?.querySelector('button[role="switch"]');
+    expect(startOnBootSwitch).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(startOnBootSwitch!);
+    });
+
+    await waitFor(() => {
+      expect(mockSetStartOnBoot).toHaveBeenCalledWith({ enabled: true });
+    });
+  });
+
+  it('should keep start on boot disabled when the feature is unsupported', async () => {
+    mockGetStartOnBootStatus.mockResolvedValue({
+      success: true,
+      data: {
+        supported: false,
+        enabled: false,
+        isPackaged: false,
+        platform: 'linux',
+      },
+    });
+
+    render(<SystemModalContent />);
+
+    await waitFor(() => {
+      expect(screen.getByText('settings.startOnBootUnsupported')).toBeInTheDocument();
+    });
+
+    const startOnBootSection = screen.getByText('settings.startOnBoot').closest('.flex-1')?.parentElement;
+    const startOnBootSwitch = startOnBootSection?.querySelector('button[role="switch"]');
+    expect(startOnBootSwitch).toHaveAttribute('aria-checked', 'false');
+    expect(startOnBootSwitch).toBeDisabled();
   });
 
   it('should render DevTools toggle button', async () => {
