@@ -14,6 +14,7 @@ import { IflowMcpAgent } from './agents/IflowMcpAgent';
 import { GeminiMcpAgent } from './agents/GeminiMcpAgent';
 import { AionuiMcpAgent } from './agents/AionuiMcpAgent';
 import { CodexMcpAgent } from './agents/CodexMcpAgent';
+import { OpencodeMcpAgent } from './agents/OpencodeMcpAgent';
 import type { IMcpProtocol, DetectedMcpServer, McpConnectionTestResult, McpSyncResult, McpSource } from './McpProtocol';
 
 /**
@@ -89,6 +90,7 @@ export class McpService {
       ['gemini', new GeminiMcpAgent()],
       ['aionui', new AionuiMcpAgent()], // AionUi 本地 @office-ai/aioncli-core
       ['codex', new CodexMcpAgent()],
+      ['opencode', new OpencodeMcpAgent()],
     ]);
   }
 

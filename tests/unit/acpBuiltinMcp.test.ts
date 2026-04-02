@@ -303,3 +303,58 @@ describe('McpService Gemini detection', () => {
     expect(builtinDetect).toHaveBeenCalledOnce();
   });
 });
+
+describe('McpService OpenCode detection', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it('reports OpenCode MCP servers under opencode source', async () => {
+    const opencodeDetect = vi.fn(async () => [makeDetectedServer({ id: 'opencode-1', name: 'filesystem' })]);
+    const emptyDetect = vi.fn(async () => []);
+
+    vi.doMock('child_process', () => ({
+      execSync: vi.fn(() => {
+        throw new Error('gemini not installed');
+      }),
+    }));
+    vi.doMock('../../src/process/services/mcpServices/agents/ClaudeMcpAgent', () => ({
+      ClaudeMcpAgent: makeAgentClass(emptyDetect),
+    }));
+    vi.doMock('../../src/process/services/mcpServices/agents/CodebuddyMcpAgent', () => ({
+      CodebuddyMcpAgent: makeAgentClass(emptyDetect),
+    }));
+    vi.doMock('../../src/process/services/mcpServices/agents/QwenMcpAgent', () => ({
+      QwenMcpAgent: makeAgentClass(emptyDetect),
+    }));
+    vi.doMock('../../src/process/services/mcpServices/agents/IflowMcpAgent', () => ({
+      IflowMcpAgent: makeAgentClass(emptyDetect),
+    }));
+    vi.doMock('../../src/process/services/mcpServices/agents/GeminiMcpAgent', () => ({
+      GeminiMcpAgent: makeAgentClass(emptyDetect),
+    }));
+    vi.doMock('../../src/process/services/mcpServices/agents/AionuiMcpAgent', () => ({
+      AionuiMcpAgent: makeAgentClass(emptyDetect),
+    }));
+    vi.doMock('../../src/process/services/mcpServices/agents/CodexMcpAgent', () => ({
+      CodexMcpAgent: makeAgentClass(emptyDetect),
+    }));
+    vi.doMock('../../src/process/services/mcpServices/agents/OpencodeMcpAgent', () => ({
+      OpencodeMcpAgent: makeAgentClass(opencodeDetect),
+    }));
+
+    const { McpService } = await import('../../src/process/services/mcpServices/McpService');
+    const service = new McpService();
+
+    const result = await service.getAgentMcpConfigs([{ backend: 'opencode', name: 'OpenCode', cliPath: 'opencode' }]);
+
+    expect(result).toEqual([
+      {
+        source: 'opencode',
+        servers: [makeDetectedServer({ id: 'opencode-1', name: 'filesystem' })],
+      },
+    ]);
+    expect(opencodeDetect).toHaveBeenCalledOnce();
+  });
+});
