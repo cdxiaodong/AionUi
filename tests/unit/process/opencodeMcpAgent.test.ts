@@ -106,7 +106,7 @@ describe('OpencodeMcpAgent', () => {
           enabled: true,
           status: 'connected',
           transport: {
-            type: 'http',
+            type: 'streamable_http',
             url: 'https://example.com/mcp',
             headers: { Authorization: 'Bearer 123' },
           },

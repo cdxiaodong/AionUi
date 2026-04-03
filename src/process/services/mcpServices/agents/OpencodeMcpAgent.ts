@@ -86,7 +86,10 @@ function toOpencodeTransport(entry: OpencodeMcpEntry): IMcpServerTransport | nul
   }
 
   const headers = sanitizeStringRecord(entry.headers);
-  const remoteType = entry.url.includes('/sse') ? 'sse' : 'http';
+  // OpenCode's 'remote' type maps back to 'streamable_http' by default (lossy conversion:
+  // both 'http' and 'streamable_http' are written as 'remote', so 'streamable_http' is the
+  // safe default on read-back). SSE entries are identified by URL path heuristic.
+  const remoteType = entry.url.includes('/sse') ? 'sse' : 'streamable_http';
   return {
     type: remoteType,
     url: entry.url,
