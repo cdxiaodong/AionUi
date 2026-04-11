@@ -733,6 +733,9 @@ export const systemSettings = {
   setPetConfirmEnabled: bridge.buildProvider<void, { enabled: boolean }>('system-settings:set-pet-confirm-enabled'),
   getCommandQueueEnabled: bridge.buildProvider<boolean, void>('system-settings:get-command-queue-enabled'),
   setCommandQueueEnabled: bridge.buildProvider<void, { enabled: boolean }>('system-settings:set-command-queue-enabled'),
+  // Global proxy settings
+  getProxy: bridge.buildProvider<string, void>('system-settings:get-proxy'),
+  setProxy: bridge.buildProvider<void, { proxy: string }>('system-settings:set-proxy'),
 };
 
 // 系统通知接口 / System notification API
