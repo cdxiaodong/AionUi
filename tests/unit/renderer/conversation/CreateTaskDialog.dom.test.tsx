@@ -283,6 +283,18 @@ vi.mock('@renderer/pages/conversation/hooks/useConversationAgents', () => ({
   }),
 }));
 
+vi.mock('@renderer/hooks/context/useAuth', () => ({
+  useAuth: () => ({
+    user: { id: 'test-user-id' },
+  }),
+}));
+
+vi.mock('@renderer/pages/team/hooks/useTeams', () => ({
+  useTeams: () => ({
+    teams: [],
+  }),
+}));
+
 // Mock utils
 vi.mock('@renderer/utils/model/agentLogo', () => ({
   getAgentLogo: (backend: string) => (backend === 'claude' ? '/logo/claude.png' : null),
