@@ -275,6 +275,7 @@ describe('ScheduledTasksPage', () => {
         id: 'job-2',
         name: 'Continuous Task',
         target: {
+          kind: 'conversation',
           payload: { kind: 'message', text: 'Generate summary' },
           executionMode: 'existing',
         },
@@ -310,6 +311,7 @@ describe('ScheduledTasksPage', () => {
         description: 'Manual',
       },
       target: {
+        kind: 'conversation',
         payload: { kind: 'message', text: 'Run manually' },
         executionMode: 'existing',
       },
