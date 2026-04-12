@@ -47,6 +47,9 @@ vi.mock('@/common', () => ({
       addJob: { invoke: (...args: unknown[]) => mockAddJob(...args) },
       updateJob: { invoke: (...args: unknown[]) => mockUpdateJob(...args) },
     },
+    team: {
+      list: { invoke: vi.fn().mockResolvedValue([]) },
+    },
   },
 }));
 
@@ -283,15 +286,9 @@ vi.mock('@renderer/pages/conversation/hooks/useConversationAgents', () => ({
   }),
 }));
 
-vi.mock('@renderer/hooks/context/useAuth', () => ({
+vi.mock('@renderer/hooks/context/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'test-user-id' },
-  }),
-}));
-
-vi.mock('@renderer/pages/team/hooks/useTeams', () => ({
-  useTeams: () => ({
-    teams: [],
   }),
 }));
 
