@@ -48,6 +48,7 @@ type UiMcpServerConfig = {
 export class GeminiAgentManager extends BaseAgentManager<
   {
     workspace: string;
+    proxy?: string;
     model: TProviderWithModel;
     webSearchEngine?: 'google' | 'default';
     mcpServers?: Record<string, UiMcpServerConfig>;
@@ -136,6 +137,7 @@ export class GeminiAgentManager extends BaseAgentManager<
     data: {
       workspace: string;
       conversation_id: string;
+      proxy?: string;
       webSearchEngine?: 'google' | 'default';
       contextFileName?: string;
       // 系统规则 / System rules
