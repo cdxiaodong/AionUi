@@ -21,6 +21,7 @@ import {
   ProcessConfig,
 } from '@process/utils/initStorage';
 import { readDirectoryRecursive } from '@process/utils';
+import { getDatabase } from '@process/services/database';
 import type { IWorkspaceFlatFile } from '@/common/adapter/ipcBridge';
 
 // ============================================================================
@@ -500,7 +501,7 @@ export function initFsBridge(): void {
       if (conversationId && saveToWorkspace) {
         // 保存到工作区 / Save to workspace
         try {
-          const db = await import('@process/services/database').then((m) => m.getDatabase());
+          const db = await getDatabase();
           const result = db.getConversation(conversationId);
           const conversationWorkspace = result.data?.extra?.workspace;
 
@@ -544,6 +545,13 @@ export function initFsBridge(): void {
         const name = path.basename(safeFileName, ext);
         const newFileName = `${name}${AIONUI_TIMESTAMP_SEPARATOR}${timestamp}${ext}`;
         filePath = path.join(uploadDir, newFileName);
+      }
+
+      // Defense in depth: ensure path stays within uploadDir
+      const resolvedFilePath = path.resolve(filePath);
+      const resolvedUploadDir = path.resolve(uploadDir);
+      if (!resolvedFilePath.startsWith(resolvedUploadDir + path.sep)) {
+        throw new Error('Invalid file name');
       }
 
       // 创建空文件作为占位 / Create empty placeholder file
