@@ -246,16 +246,13 @@ const SystemModalContent: React.FC = () => {
 
   const handleProxyChange = useCallback((value: string) => {
     setProxy(value);
-    ipcBridge.systemSettings.setProxy.invoke({ proxy: value }).catch(() => {
-      setProxy('');
-    });
   }, []);
 
   const handleProxyBlur = useCallback(() => {
-    // Validate proxy URL format (basic validation)
     if (proxy && !proxy.match(/^https?:\/\/.+/)) {
       Message.warning(t('settings.proxyHttpOnly'));
     }
+    ipcBridge.systemSettings.setProxy.invoke({ proxy }).catch(() => {});
   }, [proxy, t]);
 
   // Get system directory info
