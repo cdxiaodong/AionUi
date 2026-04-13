@@ -123,7 +123,6 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const [executionMode, setExecutionMode] = useState<ExecutionMode>('new_conversation');
   const [targetKind, setTargetKind] = useState<TargetKind>('conversation');
   const [teams, setTeams] = useState<TTeam[]>([]);
-  const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>(undefined);
 
   const userId = user?.id ?? 'system_default_user';
 
@@ -165,9 +164,6 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       if (editJob.target.kind === 'conversation') {
         setExecutionMode(editJob.target.executionMode || 'existing');
       }
-      if (isTeamTarget) {
-        setSelectedTeamId(editJob.metadata.teamId);
-      }
       const agentKey = getAgentKeyFromJob(editJob);
       setSelectedAgent(agentKey);
       form.setFieldsValue({
@@ -192,7 +188,6 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       setConfigOptions(undefined);
       setWorkspace(undefined);
       setSelectedAgent(undefined);
-      setSelectedTeamId(undefined);
     }
   }, [visible, editJob, form]);
 
@@ -442,7 +437,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                   },
             metadata: {
               ...editJob!.metadata,
-              teamId: targetKind === 'team' ? selectedTeamId : undefined,
+              teamId: targetKind === 'team' ? (values.team as string | undefined) : undefined,
               agentType: resolvedAgentType,
               agentConfig,
               updatedAt: Date.now(),
@@ -459,7 +454,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
           prompt: values.prompt,
           conversationId: targetKind === 'conversation' ? _conversationId || '' : undefined,
           conversationTitle,
-          teamId: targetKind === 'team' ? selectedTeamId : undefined,
+          teamId: targetKind === 'team' ? (values.team as string | undefined) : undefined,
           targetKind,
           agentType: resolvedAgentType,
           createdBy: 'user',
@@ -533,11 +528,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
               field='team'
               rules={[{ required: true, message: t('cron.page.form.teamRequired') }]}
             >
-              <Select
-                placeholder={t('cron.page.form.teamPlaceholder')}
-                value={selectedTeamId}
-                onChange={setSelectedTeamId}
-              >
+              <Select placeholder={t('cron.page.form.teamPlaceholder')}>
                 {teams.map((team) => (
                   <Option key={team.id} value={team.id}>
                     <div className='flex items-center gap-8px'>

@@ -88,6 +88,7 @@ describe('CronStore', () => {
 
       // Verify the values passed to run()
       const runArgs = mockPrepareInstance.run.mock.calls[0];
+      expect(insertSql.match(/\?/g) ?? []).toHaveLength(runArgs.length);
       expect(runArgs[0]).toBe('job-1'); // id
       expect(runArgs[1]).toBe('Test Every Job'); // name
       expect(runArgs[2]).toBe(1); // enabled (true -> 1)

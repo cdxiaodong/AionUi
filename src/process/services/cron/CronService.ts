@@ -360,8 +360,7 @@ export class CronService {
     if (job) {
       try {
         if (job.target.kind === 'team') {
-          // Team jobs don't have conversations to clean up
-          console.log(`[CronService] Deleting team job ${jobId} (no conversation cleanup needed)`);
+          // Team jobs don't have conversations to clean up.
         } else if (job.target.executionMode === 'new_conversation') {
           // Delete all child conversations created by this cron job
           const childConversations = await this.conversationRepo.getConversationsByCronJob(jobId);
@@ -418,6 +417,10 @@ export class CronService {
     const job = await this.repo.getById(jobId);
     if (!job) {
       throw new Error(`Job not found: ${jobId}`);
+    }
+    if (job.target.kind === 'team') {
+      void this.executeJob(job);
+      return '';
     }
     const conversationId = await this.executor.prepareConversation(job);
     // Fire-and-forget: execute in background, pass the prepared conversationId to skip re-creation
@@ -759,8 +762,11 @@ export class CronService {
         await this.repo.update(job.id, { state: job.state });
         this.emitter.emitJobUpdated(job);
 
-        // Insert a notification message into the conversation
-        this.insertMissedJobMessage(job, nextRunAt);
+        // Team jobs are not backed by conversations, so there is nowhere to
+        // insert a missed-run message.
+        if (job.target.kind !== 'team') {
+          this.insertMissedJobMessage(job, nextRunAt);
+        }
       }
 
       // Restart timer with fresh schedule
