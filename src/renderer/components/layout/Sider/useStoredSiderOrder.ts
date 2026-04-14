@@ -52,10 +52,15 @@ export const useStoredSiderOrder = <T>({
       if (areSiderOrdersEqual(previousOrder, nextOrder)) {
         return previousOrder;
       }
-      writeStoredSiderOrder(storageKey, nextOrder);
       return nextOrder;
     });
   }, [itemIds, storageKey]);
+
+  useEffect(() => {
+    if (storedOrder.length > 0) {
+      writeStoredSiderOrder(storageKey, storedOrder);
+    }
+  }, [storedOrder, storageKey]);
 
   const orderedItems = useMemo(
     () =>
@@ -102,9 +107,8 @@ export const useStoredSiderOrder = <T>({
       }
 
       setStoredOrder(nextOrder);
-      writeStoredSiderOrder(storageKey, nextOrder);
     },
-    [enabled, orderedItems, orderedIds, getId, getGroupKey, storageKey]
+    [enabled, orderedItems, orderedIds, getId, getGroupKey]
   );
 
   return {

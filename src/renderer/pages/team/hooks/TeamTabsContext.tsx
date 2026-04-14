@@ -95,31 +95,23 @@ export const TeamTabsProvider: React.FC<{
     [storageKey]
   );
 
-  const reorderAgents = useCallback(
-    (fromSlotId: string, toSlotId: string) => {
-      if (fromSlotId === toSlotId) return;
+  const reorderAgents = useCallback((fromSlotId: string, toSlotId: string) => {
+    if (fromSlotId === toSlotId) return;
 
-      setLocalAgents((prev) => {
-        const leadAgent = prev.find((agent) => agent.role === 'lead');
-        const teammates = prev.filter((agent) => agent.role !== 'lead');
-        const fromIndex = teammates.findIndex((agent) => agent.slotId === fromSlotId);
-        const toIndex = teammates.findIndex((agent) => agent.slotId === toSlotId);
-        if (fromIndex === -1 || toIndex === -1) return prev;
+    setLocalAgents((prev) => {
+      const leadAgent = prev.find((agent) => agent.role === 'lead');
+      const teammates = prev.filter((agent) => agent.role !== 'lead');
+      const fromIndex = teammates.findIndex((agent) => agent.slotId === fromSlotId);
+      const toIndex = teammates.findIndex((agent) => agent.slotId === toSlotId);
+      if (fromIndex === -1 || toIndex === -1) return prev;
 
-        const nextTeammates = [...teammates];
-        const [removed] = nextTeammates.splice(fromIndex, 1);
-        nextTeammates.splice(toIndex, 0, removed);
+      const nextTeammates = [...teammates];
+      const [removed] = nextTeammates.splice(fromIndex, 1);
+      nextTeammates.splice(toIndex, 0, removed);
 
-        writeStoredSiderOrder(
-          getTeamAgentOrderStorageKey(teamId),
-          nextTeammates.map((agent) => agent.slotId)
-        );
-
-        return leadAgent ? [leadAgent, ...nextTeammates] : nextTeammates;
-      });
-    },
-    [teamId]
-  );
+      return leadAgent ? [leadAgent, ...nextTeammates] : nextTeammates;
+    });
+  }, []);
 
   const contextValue = useMemo(
     () => ({ agents, activeSlotId, statusMap, teamId, switchTab, renameAgent, removeAgent, reorderAgents }),
