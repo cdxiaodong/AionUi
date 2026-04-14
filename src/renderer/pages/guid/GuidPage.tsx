@@ -449,6 +449,13 @@ const GuidPage: React.FC = () => {
       currentAcpCachedModelInfo={agentSelection.currentAcpCachedModelInfo}
       selectedAcpModel={agentSelection.selectedAcpModel}
       setSelectedAcpModel={agentSelection.setSelectedAcpModel}
+      acpBackend={
+        agentSelection.isPresetAgent
+          ? agentSelection.currentEffectiveAgentInfo.agentType
+          : agentSelection.selectedAgentKey.startsWith('custom:')
+            ? 'custom'
+            : agentSelection.selectedAgent
+      }
     />
   );
 
