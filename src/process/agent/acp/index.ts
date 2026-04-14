@@ -49,6 +49,7 @@ import {
 import { getClaudeModel } from './utils';
 import { getAionMcpStdioConfig } from '@process/services/mcpServices/aionMcpServiceSingleton';
 import { waitForMcpReady } from '@process/team/mcpReadiness';
+import { classifyAcpOperationError } from './errorClassification';
 
 /**
  * Initialize response result interface
@@ -744,23 +745,7 @@ export class AcpAgent {
           };
         }
       }
-      // Classify error types based on message content
-      let errorType: AcpErrorType = AcpErrorType.UNKNOWN;
-      let retryable = false;
-
-      if (errorMsg.includes('authentication') || errorMsg.includes('认证失败') || errorMsg.includes('[ACP-AUTH-')) {
-        errorType = AcpErrorType.AUTHENTICATION_FAILED;
-        retryable = false;
-      } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout') || errorMsg.includes('timed out')) {
-        errorType = AcpErrorType.TIMEOUT;
-        retryable = true;
-      } else if (errorMsg.includes('permission') || errorMsg.includes('Permission')) {
-        errorType = AcpErrorType.PERMISSION_DENIED;
-        retryable = false;
-      } else if (errorMsg.includes('connection') || errorMsg.includes('Connection')) {
-        errorType = AcpErrorType.NETWORK_ERROR;
-        retryable = true;
-      }
+      const { type: errorType, retryable } = classifyAcpOperationError(errorMsg);
 
       this.emitErrorMessage(errorMsg);
 
