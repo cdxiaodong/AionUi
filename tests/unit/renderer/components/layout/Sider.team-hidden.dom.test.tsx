@@ -12,6 +12,10 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
+vi.mock('@/renderer/hooks/context/AuthContext', () => ({
+  useAuth: () => ({ logout: vi.fn(), status: 'authenticated' }),
+}));
+
 vi.mock('@/renderer/hooks/context/LayoutContext', () => ({
   useLayoutContext: () => ({ isMobile: false }),
 }));
