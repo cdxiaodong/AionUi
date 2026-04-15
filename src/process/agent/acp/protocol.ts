@@ -2,7 +2,9 @@ import { AcpErrorType, createAcpError, type AcpError, type AcpResponse } from '@
 
 type AcpResponseError = NonNullable<AcpResponse['error']>;
 
-function toLowercaseTokens(value: unknown): string[] {
+function toLowercaseTokens(value: unknown, depth = 0): string[] {
+  if (depth > 10) return [];
+
   if (typeof value === 'string') {
     return [value.toLowerCase()];
   }
@@ -12,14 +14,16 @@ function toLowercaseTokens(value: unknown): string[] {
   }
 
   if (Array.isArray(value)) {
-    return value.flatMap((item) => toLowercaseTokens(item));
+    return value.flatMap((item) => toLowercaseTokens(item, depth + 1));
   }
 
   if (value && typeof value === 'object') {
-    return Object.entries(value as Record<string, unknown>).flatMap(([key, nestedValue]) => [
-      key.toLowerCase(),
-      ...toLowercaseTokens(nestedValue),
-    ]);
+    const result: string[] = [];
+    for (const [key, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+      result.push(key.toLowerCase());
+      result.push(...toLowercaseTokens(nestedValue, depth + 1));
+    }
+    return result;
   }
 
   return [];
@@ -66,7 +70,7 @@ export function classifyAcpProtocolError(error: unknown): AcpError {
     });
   }
 
-  if (hasAnyToken(tokens, ['permission', 'forbidden', 'denied', 'reject'])) {
+  if (hasAnyToken(tokens, ['permission', 'forbidden', 'denied', 'permission_denied'])) {
     return createAcpError(AcpErrorType.PERMISSION_DENIED, message, false, {
       protocolCode: protocolError?.code,
       protocolData: protocolError?.data,
