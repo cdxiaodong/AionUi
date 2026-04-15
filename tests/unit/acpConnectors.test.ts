@@ -142,13 +142,8 @@ describe('spawnNpxBackend - Windows UTF-8 fix', () => {
     expect(mockChild.unref).not.toHaveBeenCalled();
   });
 
-  it('ignores directInvoke on Windows and still uses bundled bun', () => {
-    spawnNpxBackend('claude', '@pkg/cli@1.0.0', 'npx.cmd', {}, 'C:\\cwd', true, false, {
-      directInvoke: {
-        nodePath: 'C:\\Program Files\\nodejs\\node.exe',
-        npxScript: 'C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js',
-      },
-    });
+  it('uses bundled bun command with chcp prefix on Windows', () => {
+    spawnNpxBackend('claude', '@pkg/cli@1.0.0', 'npx.cmd', {}, 'C:\\cwd', true, false);
 
     const [command] = mockSpawn.mock.calls[0];
     expect(command).toBe('chcp 65001 >nul && npx.cmd');
@@ -161,13 +156,8 @@ describe('spawnNpxBackend - Windows UTF-8 fix', () => {
     expect(command).toBe('chcp 65001 >nul && "C:\\nodejs\\npx.cmd"');
   });
 
-  it('ignores directInvoke on non-Windows', () => {
-    spawnNpxBackend('claude', '@pkg/cli@1.0.0', '/usr/local/bin/npx', {}, '/cwd', false, false, {
-      directInvoke: {
-        nodePath: '/usr/local/bin/node',
-        npxScript: '/usr/local/lib/node_modules/npm/bin/npx-cli.js',
-      },
-    });
+  it('uses bundled bun command directly on non-Windows', () => {
+    spawnNpxBackend('claude', '@pkg/cli@1.0.0', '/usr/local/bin/npx', {}, '/cwd', false, false);
 
     const [command] = mockSpawn.mock.calls[0];
     expect(command).toBe('/usr/local/bin/npx');
