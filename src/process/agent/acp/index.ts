@@ -42,6 +42,7 @@ import {
 } from './constants';
 import { buildAcpModelInfo } from './modelInfo';
 import { buildBuiltinAcpSessionMcpServers, buildTeamMcpServer, type AcpSessionMcpServer } from './mcpSessionConfig';
+import { classifyAcpProtocolError } from './protocol';
 import { getClaudeModel } from './utils';
 import { getTeamGuideStdioConfig } from '@process/team/mcp/guide/teamGuideSingleton';
 import { shouldInjectTeamGuideMcp } from '@process/team/prompts/teamGuideCapability.ts';
@@ -749,25 +750,9 @@ export class AcpAgent {
           };
         }
       }
-      // Classify error types based on message content
-      let errorType: AcpErrorType = AcpErrorType.UNKNOWN;
-      let retryable = false;
+      const classifiedError = classifyAcpProtocolError(error);
 
-      if (errorMsg.includes('authentication') || errorMsg.includes('认证失败') || errorMsg.includes('[ACP-AUTH-')) {
-        errorType = AcpErrorType.AUTHENTICATION_FAILED;
-        retryable = false;
-      } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout') || errorMsg.includes('timed out')) {
-        errorType = AcpErrorType.TIMEOUT;
-        retryable = true;
-      } else if (errorMsg.includes('permission') || errorMsg.includes('Permission')) {
-        errorType = AcpErrorType.PERMISSION_DENIED;
-        retryable = false;
-      } else if (errorMsg.includes('connection') || errorMsg.includes('Connection')) {
-        errorType = AcpErrorType.NETWORK_ERROR;
-        retryable = true;
-      }
-
-      this.emitErrorMessage(errorMsg);
+      this.emitErrorMessage(classifiedError.message);
 
       // Emit finish signal to reset frontend loading state.
       // Without this, the UI stays in loading after a timeout and the user cannot
@@ -783,7 +768,7 @@ export class AcpAgent {
 
       return {
         success: false,
-        error: createAcpError(errorType, errorMsg, retryable),
+        error: classifiedError,
       };
     }
   }

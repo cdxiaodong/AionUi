@@ -31,6 +31,7 @@ import path from 'path';
 import { getNpxCacheDir, getWindowsShellExecutionOptions, resolveNpxPath } from '@process/utils/shellEnv';
 import { connectClaude, connectCodebuddy, connectCodex, prepareCleanEnv, spawnGenericBackend } from './acpConnectors';
 import type { SpawnResult } from './acpConnectors';
+import { AcpProtocolError } from './protocol';
 import { killChild, readTextFile, writeJsonRpcMessage, writeTextFile } from './utils';
 
 const execFile = promisify(execFileCb);
@@ -655,7 +656,7 @@ export class AcpConnection {
         });
       } else if ('id' in message && typeof message.id === 'number' && this.pendingRequests.has(message.id)) {
         // This is a response to a previous request
-        const { resolve, reject } = this.pendingRequests.get(message.id)!;
+        const { resolve, reject, method } = this.pendingRequests.get(message.id)!;
         this.pendingRequests.delete(message.id);
 
         if ('result' in message) {
@@ -675,8 +676,7 @@ export class AcpConnection {
           }
           resolve(message.result);
         } else if ('error' in message) {
-          const errorMsg = message.error?.message || 'Unknown ACP error';
-          reject(new Error(errorMsg));
+          reject(new AcpProtocolError(message.error || { code: -32603, message: 'Unknown ACP error' }, method));
         }
       } else {
         // Unknown message format, ignore
