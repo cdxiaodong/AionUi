@@ -8,11 +8,13 @@ import { ipcBridge } from '@/common';
 import type { IResponseMessage } from '@/common/adapter/ipcBridge';
 import { ConfigStorage } from '@/common/config/storage';
 import type { AcpBackend, AcpSessionConfigOption } from '@/common/types/acpTypes';
-import { Button, Dropdown, Menu } from '@arco-design/web-react';
+import { Button, Dropdown, Menu, Select } from '@arco-design/web-react';
 import { Down } from '@icon-park/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import MarqueePillLabel from './MarqueePillLabel';
+
+const { Option } = Select;
 
 /**
  * Backends that currently support ACP configOptions (e.g., thought_level).
@@ -52,7 +54,7 @@ const AcpConfigSelector: React.FC<{
   initialConfigOptions?: unknown[];
   /** Local mode callback when user selects an option (Guid page) */
   onOptionSelect?: (configId: string, value: string) => void;
-}> = ({ conversationId, backend, compact = false, initialConfigOptions, onOptionSelect }) => {
+}> = ({ conversationId, backend, compact = true, initialConfigOptions, onOptionSelect }) => {
   const { t } = useTranslation();
   const [configOptions, setConfigOptions] = useState<AcpSessionConfigOption[]>(
     () => (Array.isArray(initialConfigOptions) ? initialConfigOptions : []) as AcpSessionConfigOption[]
@@ -171,6 +173,24 @@ const AcpConfigSelector: React.FC<{
           option.options?.find((o) => o.value === currentValue)?.name ||
           currentValue ||
           t('acp.config.default', { defaultValue: 'Default' });
+
+        if (!compact) {
+          return (
+            <Select
+              key={option.id}
+              value={currentValue || undefined}
+              className='w-full'
+              placeholder={t(`acp.config.${option.id}`, { defaultValue: option.name || 'Options' })}
+              onChange={(value) => handleSelectOption(option.id, String(value))}
+            >
+              {option.options?.map((choice) => (
+                <Option key={choice.value} value={choice.value}>
+                  {choice.name || choice.value}
+                </Option>
+              ))}
+            </Select>
+          );
+        }
 
         return (
           <Dropdown

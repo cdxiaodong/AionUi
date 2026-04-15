@@ -391,7 +391,7 @@ Please check your local CLI tool authentication status`,
             <AcpConfigSelector
               conversationId={conversation_id}
               backend={backend}
-              compact={!!teamId}
+              compact
               initialConfigOptions={cachedConfigOptions}
             />
           </div>
