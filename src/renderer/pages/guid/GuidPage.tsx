@@ -32,7 +32,7 @@ import { getAgentLogo } from '@/renderer/utils/model/agentLogo';
 import type { AcpBackendConfig } from './types';
 import { Button, ConfigProvider, Dropdown, Menu, Message } from '@arco-design/web-react';
 import { Down, Left, Robot, Write } from '@icon-park/react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './index.module.css';
@@ -72,10 +72,13 @@ const GuidPage: React.FC = () => {
   // --- Hooks ---
   const modelSelection = useGuidModelSelection();
 
+  const resetAssistantRequested = (location.state as { resetAssistant?: boolean } | null)?.resetAssistant === true;
   const agentSelection = useGuidAgentSelection({
     modelList: modelSelection.modelList,
     isGoogleAuth: modelSelection.isGoogleAuth,
     localeKey,
+    resetAssistant: resetAssistantRequested,
+    locationKey: location.key,
   });
 
   const guidInput = useGuidInput({
@@ -309,13 +312,25 @@ const GuidPage: React.FC = () => {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [canExpandDescription, setCanExpandDescription] = useState(false);
 
-  // Reset UI state whenever the user navigates to /guid fresh
-  // (agent selection is preserved via saved preference in useGuidAgentSelection)
-  useEffect(() => {
+  // Reset guid-local UI state before paint so same-route navigations do not
+  // briefly show the previous draft or preset assistant layout.
+  useLayoutEffect(() => {
     guidInput.setInput('');
+    guidInput.setFiles([]);
+    guidInput.setLoading(false);
+    if (!(location.state as { workspace?: string } | null)?.workspace) {
+      guidInput.setDir('');
+    }
     setIsDescriptionExpanded(false);
-  }, [location.key]);
+  }, [guidInput.setDir, guidInput.setFiles, guidInput.setInput, guidInput.setLoading, location.key, location.state]);
 
+  // When sidebar "新对话" navigates with resetAssistant, clear the location state
+  // so subsequent re-renders don't keep seeing the flag. The actual agent reset
+  // is handled inside useGuidAgentSelection (via the resetAssistant option).
+  useEffect(() => {
+    if (!resetAssistantRequested) return;
+    window.history.replaceState(null, '', `${location.pathname}${location.search}${location.hash}`);
+  }, [resetAssistantRequested, location.pathname, location.search, location.hash]);
   useEffect(() => {
     const node = descriptionTextRef.current;
     if (!node || !agentSelection.isPresetAgent || !selectedAssistantDescription) {
@@ -647,6 +662,7 @@ const GuidPage: React.FC = () => {
               selectedAgentKey={agentSelection.selectedAgentKey}
               getAgentKey={agentSelection.getAgentKey}
               onSelectAgent={handleSelectAgentFromPillBar}
+              suppressSelectionAnimation={resetAssistantRequested}
             />
           ) : null}
 

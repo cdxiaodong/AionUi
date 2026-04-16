@@ -11,7 +11,7 @@ import { ConfigStorage } from '@/common/config/storage';
 import type { AcpSessionConfigOption } from '@/common/types/acpTypes';
 import type { AcpBackend, AcpBackendConfig, AcpModelInfo, AvailableAgent, EffectiveAgentInfo } from '../types';
 import { getAgentModes } from '@/renderer/utils/model/agentModes';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { savePreferredMode, savePreferredModelId, getAgentKey as getAgentKeyUtil } from './agentSelectionUtils';
 import { usePresetAssistantResolver } from './usePresetAssistantResolver';
@@ -60,6 +60,9 @@ type UseGuidAgentSelectionOptions = {
   modelList: IProvider[];
   isGoogleAuth: boolean;
   localeKey: string;
+  resetAssistant?: boolean;
+  /** React Router location.key — changes on every navigation, used to detect new resets. */
+  locationKey?: string;
 };
 
 /**
@@ -69,6 +72,8 @@ export const useGuidAgentSelection = ({
   modelList,
   isGoogleAuth,
   localeKey,
+  resetAssistant,
+  locationKey,
 }: UseGuidAgentSelectionOptions): GuidAgentSelectionResult => {
   const [selectedAgentKey, _setSelectedAgentKey] = useState<string>('aionrs');
   const [availableAgents, setAvailableAgents] = useState<AvailableAgent[]>();
@@ -210,9 +215,36 @@ export const useGuidAgentSelection = ({
     setAvailableAgents([...availableAgentsData, ...remoteAsAvailable]);
   }, [availableAgentsData, remoteAgentsData]);
 
-  // Load last selected agent
+  // Track whether the resetAssistant flag has been consumed so it only fires once
+  // per navigation. Use locationKey (changes on every navigate()) to reset the guard,
+  // because window.history.replaceState does NOT update React Router's location.state.
+  const resetHandledRef = useRef(false);
+  const prevLocationKeyRef = useRef(locationKey);
+  if (locationKey !== prevLocationKeyRef.current) {
+    prevLocationKeyRef.current = locationKey;
+    resetHandledRef.current = false;
+  }
+
+  // Apply sidebar "new chat" resets before paint so the previous assistant
+  // selection does not flash for a frame when navigating to /guid again.
+  useLayoutEffect(() => {
+    if (!availableAgents || availableAgents.length === 0) return;
+
+    if (resetAssistant && !resetHandledRef.current) {
+      resetHandledRef.current = true;
+      const firstCliAgent = availableAgents.find((a) => !a.isPreset);
+      const fallbackKey = firstCliAgent ? getAgentKey(firstCliAgent) : 'aionrs';
+      _setSelectedAgentKey(fallbackKey);
+      ConfigStorage.set('guid.lastSelectedAgent', fallbackKey).catch((error) => {
+        console.error('Failed to save reset agent key:', error);
+      });
+    }
+  }, [availableAgents, resetAssistant, locationKey]);
+
+  // Load last selected agent when no explicit reset was requested.
   useEffect(() => {
     if (!availableAgents || availableAgents.length === 0) return;
+    if (resetAssistant) return;
 
     let cancelled = false;
 
@@ -245,7 +277,7 @@ export const useGuidAgentSelection = ({
     return () => {
       cancelled = true;
     };
-  }, [availableAgents]);
+  }, [availableAgents, resetAssistant, locationKey]);
 
   // Load cached ACP model lists
   useEffect(() => {
