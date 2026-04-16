@@ -19,7 +19,18 @@
     "quickActionStar": "Like us? Give us a star!",
     "skillsMarket": "AionUi Skills Market",
     "skillsMarketDesc": "Search and activate community Skills on demand. Configure once, available for all agents.",
-    "skillsMarketDetails": "View More >>"
+    "skillsMarketDetails": "View More >>",
+    "quickActionContinueCli": "Continue CLI session",
+    "cliSessionsTitle": "Continue CLI session",
+    "cliSessionsDescription": "Import locally stored Codex and Claude sessions, then continue them in AionUi.",
+    "cliSessionsEmpty": "No local CLI sessions found yet.",
+    "cliSessionsContinue": "Continue",
+    "cliSessionsLastActive": "Last active",
+    "cliSessionsLoadFailed": "Failed to load local CLI sessions",
+    "cliSessionsContinueFailed": "Failed to continue the selected CLI session",
+    "cliSessionsAgentUnavailable": "{{agent}} is not currently available in AionUi",
+    "cliSessionsBackendCodex": "Codex",
+    "cliSessionsBackendClaude": "Claude Code"
   },
   "history": {
     "recents": "Recents",

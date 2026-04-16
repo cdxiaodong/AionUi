@@ -19,7 +19,18 @@
     "quickActionStar": "喜歡我們？點個星吧",
     "skillsMarket": "AionUi Skills Market",
     "skillsMarketDesc": "按需搜尋並啟用社區 Skills，一次設定，所有Agent通用。",
-    "skillsMarketDetails": "詳情 >>"
+    "skillsMarketDetails": "詳情 >>",
+    "quickActionContinueCli": "繼續 CLI 會話",
+    "cliSessionsTitle": "繼續 CLI 會話",
+    "cliSessionsDescription": "讀取本地保存的 Codex 與 Claude 會話，並在 AionUi 中繼續對話。",
+    "cliSessionsEmpty": "暫未發現本地 CLI 會話。",
+    "cliSessionsContinue": "繼續",
+    "cliSessionsLastActive": "最後活躍時間",
+    "cliSessionsLoadFailed": "載入本地 CLI 會話失敗",
+    "cliSessionsContinueFailed": "繼續所選 CLI 會話失敗",
+    "cliSessionsAgentUnavailable": "{{agent}} 目前在 AionUi 中不可用",
+    "cliSessionsBackendCodex": "Codex",
+    "cliSessionsBackendClaude": "Claude Code"
   },
   "history": {
     "recents": "最近",

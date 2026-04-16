@@ -5,10 +5,14 @@
  */
 
 import { resolveLocaleKey } from '@/common/utils';
+import { ipcBridge } from '@/common';
 import { useAssistantBackends } from '@/renderer/hooks/assistant';
 import { useInputFocusRing } from '@/renderer/hooks/chat/useInputFocusRing';
 import { openExternalUrl, resolveExtensionAssetUrl } from '@/renderer/utils/platform';
+import { emitter } from '@/renderer/utils/emitter';
+import { updateWorkspaceTime } from '@/renderer/utils/workspace/workspaceHistory';
 import { useConversationTabs } from '@/renderer/pages/conversation/hooks/ConversationTabsContext';
+import { buildStoredCliSessionParams } from '@/renderer/pages/conversation/utils/createConversationParams';
 import { BUILTIN_AGENT_OPTIONS, CUSTOM_AVATAR_IMAGE_MAP } from './constants';
 import AgentPillBar from './components/AgentPillBar';
 import AssistantSelectionArea from './components/AssistantSelectionArea';
@@ -18,6 +22,7 @@ import GuidInputCard from './components/GuidInputCard';
 import GuidModelSelector from './components/GuidModelSelector';
 import MentionDropdown, { MentionSelectorBadge } from './components/MentionDropdown';
 import QuickActionButtons from './components/QuickActionButtons';
+import ResumeCliSessionsModal from './ResumeCliSessionsModal';
 import SkillsMarketBanner from './components/SkillsMarketBanner';
 import FeedbackReportModal from '@/renderer/components/settings/SettingsModal/contents/FeedbackReportModal';
 import { useGuidAgentSelection } from './hooks/useGuidAgentSelection';
@@ -30,6 +35,7 @@ import { ConfigStorage } from '@/common/config/storage';
 import { ACP_BACKENDS_ALL, type PresetAgentType } from '@/common/types/acpTypes';
 import { getAgentLogo } from '@/renderer/utils/model/agentLogo';
 import type { AcpBackendConfig } from './types';
+import type { ILocalCliSessionSummary } from '@/common/adapter/ipcBridge';
 import { Button, ConfigProvider, Dropdown, Menu, Message } from '@arco-design/web-react';
 import { Down, Left, Robot, Write } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -49,6 +55,10 @@ const GuidPage: React.FC = () => {
   const { availableBackends, extensionAcpAdapters } = useAssistantBackends();
   const localeKey = resolveLocaleKey(i18n.language);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showResumeCliSessionsModal, setShowResumeCliSessionsModal] = useState(false);
+  const [cliSessionsLoading, setCliSessionsLoading] = useState(false);
+  const [continuingSessionId, setContinuingSessionId] = useState<string | null>(null);
+  const [cliSessions, setCliSessions] = useState<ILocalCliSessionSummary[]>([]);
 
   // Open external link
   const openLink = useCallback(async (url: string) => {
@@ -58,6 +68,27 @@ const GuidPage: React.FC = () => {
       console.error('Failed to open external link:', error);
     }
   }, []);
+
+  const loadCliSessions = useCallback(async () => {
+    setCliSessionsLoading(true);
+    try {
+      const result = await ipcBridge.acpConversation.listStoredSessions.invoke();
+      if (!result?.success || !result.data) {
+        throw new Error(result?.msg || 'Failed to load CLI sessions');
+      }
+      setCliSessions(result.data.sessions);
+    } catch (error) {
+      console.error('Failed to load CLI sessions:', error);
+      Message.error(t('conversation.welcome.cliSessionsLoadFailed'));
+    } finally {
+      setCliSessionsLoading(false);
+    }
+  }, [t]);
+
+  const handleOpenCliSessions = useCallback(() => {
+    setShowResumeCliSessionsModal(true);
+    void loadCliSessions();
+  }, [loadCliSessions]);
 
   // --- Hooks ---
   // Track which provider-based agent is selected so model selection persists per agent type
@@ -431,6 +462,42 @@ const GuidPage: React.FC = () => {
     [agentSelection, currentPresetAgentType, t]
   );
 
+  const handleContinueCliSession = useCallback(
+    async (session: ILocalCliSessionSummary) => {
+      const agent = agentSelection.availableAgents?.find(
+        (item) => item.backend === session.backend && item.isPreset !== true
+      );
+      if (!agent) {
+        const agentLabel =
+          session.backend === 'codex'
+            ? t('conversation.welcome.cliSessionsBackendCodex')
+            : t('conversation.welcome.cliSessionsBackendClaude');
+        Message.error(t('conversation.welcome.cliSessionsAgentUnavailable', { agent: agentLabel }));
+        return;
+      }
+
+      setContinuingSessionId(session.id);
+      try {
+        const params = await buildStoredCliSessionParams(agent, session);
+        const conversation = await ipcBridge.conversation.create.invoke(params);
+        if (!conversation?.id) {
+          throw new Error('Failed to create conversation from stored session');
+        }
+        updateWorkspaceTime(session.workspace);
+        openTab(conversation);
+        emitter.emit('chat.history.refresh');
+        setShowResumeCliSessionsModal(false);
+        await navigate(`/conversation/${conversation.id}`);
+      } catch (error) {
+        console.error('Failed to continue CLI session:', error);
+        Message.error(t('conversation.welcome.cliSessionsContinueFailed'));
+      } finally {
+        setContinuingSessionId(null);
+      }
+    },
+    [agentSelection.availableAgents, navigate, openTab, t]
+  );
+
   // Resolve the effective agent type once — covers both direct selection and preset assistants
   const effectiveAgentType = agentSelection.isPresetAgent
     ? agentSelection.currentEffectiveAgentInfo.agentType
@@ -725,8 +792,23 @@ const GuidPage: React.FC = () => {
         <QuickActionButtons
           onOpenLink={openLink}
           onOpenBugReport={() => setShowFeedbackModal(true)}
+          onOpenCliSessions={handleOpenCliSessions}
           inactiveBorderColor={inactiveBorderColor}
           activeShadow={activeShadow}
+        />
+        <ResumeCliSessionsModal
+          visible={showResumeCliSessionsModal}
+          loading={cliSessionsLoading}
+          sessions={cliSessions}
+          continuingSessionId={continuingSessionId}
+          onCancel={() => {
+            if (continuingSessionId) return;
+            setShowResumeCliSessionsModal(false);
+          }}
+          onRefresh={() => void loadCliSessions()}
+          onContinue={(session) => {
+            void handleContinueCliSession(session);
+          }}
         />
         <FeedbackReportModal visible={showFeedbackModal} onCancel={() => setShowFeedbackModal(false)} />
       </div>

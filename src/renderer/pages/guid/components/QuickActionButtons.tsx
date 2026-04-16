@@ -14,6 +14,7 @@ import styles from '../index.module.css';
 type QuickActionButtonsProps = {
   onOpenLink: (url: string) => void;
   onOpenBugReport: () => void;
+  onOpenCliSessions: () => void;
   inactiveBorderColor: string;
   activeShadow: string;
 };
@@ -29,12 +30,13 @@ let webuiStatusCache: {
 const QuickActionButtons: React.FC<QuickActionButtonsProps> = ({
   onOpenLink,
   onOpenBugReport,
+  onOpenCliSessions,
   inactiveBorderColor,
   activeShadow,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [hoveredQuickAction, setHoveredQuickAction] = useState<'bugReport' | 'repo' | 'webui' | null>(null);
+  const [hoveredQuickAction, setHoveredQuickAction] = useState<'bugReport' | 'repo' | 'webui' | 'cli' | null>(null);
   const [webuiQuickStatus, setWebuiQuickStatus] = useState<WebuiQuickStatus>('checking');
 
   useEffect(() => {
@@ -166,6 +168,33 @@ const QuickActionButtons: React.FC<QuickActionButtonsProps> = ({
           </svg>
           <span className='opacity-0 max-w-0 overflow-hidden text-14px text-[var(--color-text-2)] group-hover:opacity-100 group-hover:max-w-120px transition-all duration-360 ease-in-out'>
             {t('conversation.welcome.quickActionStar')}
+          </span>
+        </div>
+        <div
+          className='group inline-flex items-center justify-center h-36px min-w-36px max-w-36px px-0 rd-999px bg-fill-0 cursor-pointer overflow-hidden whitespace-nowrap hover:max-w-210px hover:px-14px hover:justify-start hover:gap-8px transition-[max-width,padding,border-radius,box-shadow] duration-420 ease-in-out'
+          style={quickActionStyle(hoveredQuickAction === 'cli')}
+          onMouseEnter={() => setHoveredQuickAction('cli')}
+          onMouseLeave={() => setHoveredQuickAction(null)}
+          onClick={onOpenCliSessions}
+        >
+          <svg
+            className='flex-shrink-0 text-[var(--color-text-3)] group-hover:text-[rgb(var(--primary-6))] transition-colors duration-300'
+            width='20'
+            height='20'
+            viewBox='0 0 20 20'
+            fill='none'
+            xmlns='http://www.w3.org/2000/svg'
+          >
+            <path
+              d='M10 3.33398V10.0007L13.3333 11.6673M17.5 10.0007C17.5 14.143 14.1421 17.5007 10 17.5007C5.85786 17.5007 2.5 14.143 2.5 10.0007C2.5 5.85851 5.85786 2.50065 10 2.50065C14.1421 2.50065 17.5 5.85851 17.5 10.0007Z'
+              stroke='currentColor'
+              strokeWidth='1.66667'
+              strokeLinecap='round'
+              strokeLinejoin='round'
+            />
+          </svg>
+          <span className='opacity-0 max-w-0 overflow-hidden text-14px text-[var(--color-text-2)] group-hover:opacity-100 group-hover:max-w-170px transition-all duration-360 ease-in-out'>
+            {t('conversation.welcome.quickActionContinueCli')}
           </span>
         </div>
         <div

@@ -22,6 +22,7 @@ vi.mock('../../src/common', () => ({
       refreshCustomAgents: makeChannel('refreshCustomAgents'),
       testCustomAgent: makeChannel('testCustomAgent'),
       checkAgentHealth: makeChannel('checkAgentHealth'),
+      listStoredSessions: makeChannel('listStoredSessions'),
       getMode: makeChannel('getMode'),
       getModelInfo: makeChannel('getModelInfo'),
       setModel: makeChannel('setModel'),
@@ -54,6 +55,10 @@ vi.mock('../../src/process/task/GeminiAgentManager', () => ({ GeminiAgentManager
 
 vi.mock('../../src/process/services/mcpServices/McpService', () => ({
   mcpService: { getSupportedTransportsForAgent: vi.fn(() => []) },
+}));
+
+vi.mock('../../src/process/bridge/services/LocalCliSessionService', () => ({
+  localCliSessionService: { listSessions: vi.fn(async () => []) },
 }));
 
 vi.mock('../../src/process/agent/aionrs/binaryResolver', () => ({
@@ -154,5 +159,39 @@ describe('acpConversationBridge', () => {
 
     const result = await handlers['getAvailableAgents']();
     expect(result).toEqual({ success: false, msg: 'detection failed' });
+  });
+
+  it('listStoredSessions returns sessions from the local CLI session service', async () => {
+    const { localCliSessionService } = await import('../../src/process/bridge/services/LocalCliSessionService');
+    vi.mocked(localCliSessionService.listSessions).mockResolvedValue([
+      {
+        id: 'codex-session-1',
+        backend: 'codex',
+        title: 'Codex session',
+        preview: 'Continue this session',
+        workspace: '/tmp/workspace',
+        updatedAt: 1,
+        sourcePath: '/tmp/session.jsonl',
+      },
+    ] as any);
+
+    const result = await handlers['listStoredSessions']();
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        sessions: [
+          {
+            id: 'codex-session-1',
+            backend: 'codex',
+            title: 'Codex session',
+            preview: 'Continue this session',
+            workspace: '/tmp/workspace',
+            updatedAt: 1,
+            sourcePath: '/tmp/session.jsonl',
+          },
+        ],
+      },
+    });
   });
 });

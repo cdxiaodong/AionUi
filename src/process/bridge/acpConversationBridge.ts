@@ -12,6 +12,7 @@ import AcpAgentManager from '@process/task/AcpAgentManager';
 import { GeminiAgentManager } from '@process/task/GeminiAgentManager';
 import { AionrsManager } from '@process/task/AionrsManager';
 import { mcpService } from '@/process/services/mcpServices/McpService';
+import { localCliSessionService } from '@/process/bridge/services/LocalCliSessionService';
 import { ipcBridge } from '@/common';
 import * as os from 'os';
 
@@ -166,6 +167,18 @@ export function initAcpConversationBridge(workerTaskManager: IWorkerTaskManager)
         success: false,
         msg: `${backend} health check failed: ${errorMsg}`,
         data: { available: false, error: errorMsg },
+      };
+    }
+  });
+
+  ipcBridge.acpConversation.listStoredSessions.provider(async () => {
+    try {
+      const sessions = await localCliSessionService.listSessions();
+      return { success: true, data: { sessions } };
+    } catch (error) {
+      return {
+        success: false,
+        msg: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   });

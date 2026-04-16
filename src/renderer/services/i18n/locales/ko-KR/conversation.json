@@ -19,7 +19,18 @@
     "quickActionStar": "마음에 드시나요? 별을 주세요!",
     "skillsMarket": "AionUi Skills Market",
     "skillsMarketDesc": "커뮤니티 Skills를 필요에 따라 검색하고 활성화. 한 번 설정하면 모든 Agent에서 사용 가능.",
-    "skillsMarketDetails": "자세히 >>"
+    "skillsMarketDetails": "자세히 >>",
+    "quickActionContinueCli": "Continue CLI session",
+    "cliSessionsTitle": "Continue CLI session",
+    "cliSessionsDescription": "Import locally stored Codex and Claude sessions, then continue them in AionUi.",
+    "cliSessionsEmpty": "No local CLI sessions found yet.",
+    "cliSessionsContinue": "Continue",
+    "cliSessionsLastActive": "Last active",
+    "cliSessionsLoadFailed": "Failed to load local CLI sessions",
+    "cliSessionsContinueFailed": "Failed to continue the selected CLI session",
+    "cliSessionsAgentUnavailable": "{{agent}} is not currently available in AionUi",
+    "cliSessionsBackendCodex": "Codex",
+    "cliSessionsBackendClaude": "Claude Code"
   },
   "history": {
     "recents": "최근",

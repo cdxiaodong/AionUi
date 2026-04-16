@@ -137,6 +137,16 @@ export interface ICdpConfig {
   port?: number;
 }
 
+export interface ILocalCliSessionSummary {
+  id: string;
+  backend: Extract<AcpBackend, 'claude' | 'codex'>;
+  title: string;
+  preview: string;
+  workspace: string;
+  updatedAt: number;
+  sourcePath: string;
+}
+
 // Start on boot status interface
 export interface IStartOnBootStatus {
   /** Whether the current runtime can manage start-on-boot */
@@ -473,6 +483,9 @@ export const acpConversation = {
     IBridgeResponse<{ available: boolean; latency?: number; error?: string }>,
     { backend: AcpBackend }
   >('acp.check-agent-health'),
+  listStoredSessions: bridge.buildProvider<IBridgeResponse<{ sessions: ILocalCliSessionSummary[] }>, void>(
+    'acp.list-stored-sessions'
+  ),
   // Set session mode for ACP agents (claude, qwen, etc.)
   // 设置 ACP 代理的会话模式（claude、qwen 等）
   setMode: bridge.buildProvider<IBridgeResponse<{ mode: string }>, { conversationId: string; mode: string }>(
@@ -948,6 +961,8 @@ export interface ICreateConversationParams {
     cachedConfigOptions?: import('../types/acpTypes').AcpSessionConfigOption[];
     /** Pending config option selections from Guid page (applied after session creation) */
     pendingConfigOptions?: Record<string, string>;
+    /** Resume an existing ACP session discovered from local CLI storage */
+    acpSessionId?: string;
     /** Runtime validation snapshot used for post-switch strong checks (OpenClaw) */
     runtimeValidation?: {
       expectedWorkspace?: string;

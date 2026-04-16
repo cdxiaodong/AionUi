@@ -15,6 +15,7 @@ import {
   getConversationTypeForPreset,
 } from '@/common/utils/buildAgentConversationParams';
 import type { AvailableAgent } from '@/renderer/utils/model/agentTypes';
+import type { ILocalCliSessionSummary } from '@/common/adapter/ipcBridge';
 
 /**
  * Get a model from configured providers that is compatible with aionrs.
@@ -138,6 +139,24 @@ export async function buildCliAgentParams(
     customAgentId: agent.customAgentId,
     model,
   });
+}
+
+/**
+ * Build ICreateConversationParams for resuming a CLI session discovered from local agent storage.
+ */
+export async function buildStoredCliSessionParams(
+  agent: AvailableAgent,
+  session: Pick<ILocalCliSessionSummary, 'id' | 'title' | 'workspace'>
+): Promise<ICreateConversationParams> {
+  const params = await buildCliAgentParams(agent, session.workspace);
+  return {
+    ...params,
+    name: session.title,
+    extra: {
+      ...params.extra,
+      acpSessionId: session.id,
+    },
+  };
 }
 
 /**

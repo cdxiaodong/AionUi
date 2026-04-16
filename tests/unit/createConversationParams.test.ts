@@ -30,7 +30,7 @@ vi.mock('@/common/utils/presetAssistantResources', () => ({
   loadPresetAssistantResources,
 }));
 
-const { buildPresetAssistantParams, buildCliAgentParams } =
+const { buildPresetAssistantParams, buildCliAgentParams, buildStoredCliSessionParams } =
   await import('../../src/renderer/pages/conversation/utils/createConversationParams');
 
 describe('createConversationParams', () => {
@@ -194,6 +194,26 @@ describe('createConversationParams', () => {
 
     expect(params.type).toBe('acp');
     expect(params.model).toEqual({});
+  });
+
+  it('injects the stored ACP session id when resuming a local CLI session', async () => {
+    const params = await buildStoredCliSessionParams(
+      {
+        backend: 'codex',
+        name: 'Codex',
+        cliPath: '/usr/local/bin/codex',
+      },
+      {
+        id: 'session-codex-1',
+        title: 'Resume Codex session',
+        workspace: '/tmp/resume-workspace',
+      }
+    );
+
+    expect(params.name).toBe('Resume Codex session');
+    expect(params.extra.workspace).toBe('/tmp/resume-workspace');
+    expect(params.extra.acpSessionId).toBe('session-codex-1');
+    expect(params.extra.backend).toBe('codex');
   });
 
   it('throws error for aionrs if no enabled provider', async () => {
