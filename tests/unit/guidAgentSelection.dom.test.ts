@@ -200,6 +200,38 @@ describe('useGuidAgentSelection – preset agent config resolution', () => {
     localeKey: 'en-US',
   };
 
+  it('skips restoring preset agent when sidebar resetAssistant is requested', async () => {
+    configStorageMock.get.mockImplementation(async (key: string) => {
+      switch (key) {
+        case 'acp.cachedModels':
+          return { claude: CLAUDE_CACHED_MODEL };
+        case 'acp.customAgents':
+          return CUSTOM_AGENTS;
+        case 'guid.lastSelectedAgent':
+          return `custom:${PRESET_AGENT_ID}`;
+        case 'acp.config':
+          return {};
+        case 'gemini.config':
+        case 'gemini.defaultModel':
+        case 'aionrs.config':
+        case 'aionrs.defaultModel':
+          return null;
+        default:
+          return null;
+      }
+    });
+
+    const { result } = renderHook(() => useGuidAgentSelection({ ...hookOptions, resetAssistantRequested: true }));
+
+    await waitFor(() => {
+      expect(result.current.availableAgents).toBeDefined();
+      expect(result.current.selectedAgentKey).toBe('gemini');
+    });
+
+    expect(result.current.isPresetAgent).toBe(false);
+    expect(configStorageMock.set).toHaveBeenCalledWith('guid.lastSelectedAgent', 'gemini');
+  });
+
   it('currentAcpCachedModelInfo uses effective backend type for preset agent', async () => {
     const { result } = renderHook(() => useGuidAgentSelection(hookOptions));
 

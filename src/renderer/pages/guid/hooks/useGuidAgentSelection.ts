@@ -60,6 +60,7 @@ type UseGuidAgentSelectionOptions = {
   modelList: IProvider[];
   isGoogleAuth: boolean;
   localeKey: string;
+  resetAssistantRequested?: boolean;
 };
 
 /**
@@ -69,6 +70,7 @@ export const useGuidAgentSelection = ({
   modelList,
   isGoogleAuth,
   localeKey,
+  resetAssistantRequested = false,
 }: UseGuidAgentSelectionOptions): GuidAgentSelectionResult => {
   const [selectedAgentKey, _setSelectedAgentKey] = useState<string>('aionrs');
   const [availableAgents, setAvailableAgents] = useState<AvailableAgent[]>();
@@ -218,6 +220,14 @@ export const useGuidAgentSelection = ({
 
     const loadLastSelectedAgent = async () => {
       try {
+        if (resetAssistantRequested) {
+          const firstNonPresetAgent = availableAgents.find((agent) => !agent.isPreset) ?? availableAgents[0];
+          if (firstNonPresetAgent) {
+            setSelectedAgentKey(getAgentKey(firstNonPresetAgent));
+          }
+          return;
+        }
+
         const savedAgentKey = await ConfigStorage.get('guid.lastSelectedAgent');
         if (cancelled) return;
 
@@ -245,7 +255,7 @@ export const useGuidAgentSelection = ({
     return () => {
       cancelled = true;
     };
-  }, [availableAgents]);
+  }, [availableAgents, resetAssistantRequested, setSelectedAgentKey, getAgentKey]);
 
   // Load cached ACP model lists
   useEffect(() => {
