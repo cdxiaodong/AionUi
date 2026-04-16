@@ -8,11 +8,7 @@ export type ClassifiedAcpError = {
 export function classifyAcpOperationError(errorMessage: string): ClassifiedAcpError {
   const normalized = errorMessage.toLowerCase();
 
-  if (
-    normalized.includes('authentication') ||
-    normalized.includes('认证失败') ||
-    normalized.includes('[acp-auth-')
-  ) {
+  if (normalized.includes('authentication') || normalized.includes('认证失败') || normalized.includes('[acp-auth-')) {
     return { type: AcpErrorType.AUTHENTICATION_FAILED, retryable: false };
   }
 
