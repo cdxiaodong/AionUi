@@ -371,4 +371,37 @@ describe('useGuidAgentSelection – preset agent config resolution', () => {
       { id: 'gpt-5-mini', label: 'GPT-5 Mini' },
     ]);
   });
+
+  it('resets preset selection synchronously on fresh guid navigation', async () => {
+    const { result, rerender } = renderHook(
+      (props: { resetAssistant?: boolean; locationKey?: string }) =>
+        useGuidAgentSelection({
+          ...hookOptions,
+          resetAssistant: props.resetAssistant,
+          locationKey: props.locationKey,
+        }),
+      {
+        initialProps: { resetAssistant: false, locationKey: 'guid-initial' },
+      }
+    );
+
+    await waitFor(() => {
+      expect(result.current.availableAgents).toBeDefined();
+    });
+
+    act(() => {
+      result.current.setSelectedAgentKey(`custom:${PRESET_AGENT_ID}`);
+    });
+
+    await waitFor(() => {
+      expect(result.current.isPresetAgent).toBe(true);
+    });
+
+    act(() => {
+      rerender({ resetAssistant: true, locationKey: 'guid-reset' });
+    });
+
+    expect(result.current.selectedAgentKey).toBe('gemini');
+    expect(result.current.isPresetAgent).toBe(false);
+  });
 });
