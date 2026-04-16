@@ -11,7 +11,7 @@ import { ConfigStorage } from '@/common/config/storage';
 import type { AcpSessionConfigOption } from '@/common/types/acpTypes';
 import type { AcpBackend, AcpBackendConfig, AcpModelInfo, AvailableAgent, EffectiveAgentInfo } from '../types';
 import { getAgentModes } from '@/renderer/utils/model/agentModes';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { savePreferredMode, savePreferredModelId, getAgentKey as getAgentKeyUtil } from './agentSelectionUtils';
 import { usePresetAssistantResolver } from './usePresetAssistantResolver';
@@ -225,13 +225,11 @@ export const useGuidAgentSelection = ({
     resetHandledRef.current = false;
   }
 
-  // Load last selected agent (or reset to default when resetAssistant is requested)
-  useEffect(() => {
+  // Apply sidebar "new chat" resets before paint so the previous assistant
+  // selection does not flash for a frame when navigating to /guid again.
+  useLayoutEffect(() => {
     if (!availableAgents || availableAgents.length === 0) return;
 
-    // When the sidebar "新对话" navigates with resetAssistant, skip loading
-    // from storage and immediately fall through to the default agent.
-    // This also persists the default so the next load won't restore the old preset.
     if (resetAssistant && !resetHandledRef.current) {
       resetHandledRef.current = true;
       const firstCliAgent = availableAgents.find((a) => !a.isPreset);
@@ -240,10 +238,12 @@ export const useGuidAgentSelection = ({
       ConfigStorage.set('guid.lastSelectedAgent', fallbackKey).catch((error) => {
         console.error('Failed to save reset agent key:', error);
       });
-      return;
     }
+  }, [availableAgents, resetAssistant, locationKey]);
 
-    // Skip normal load when resetAssistant is still in location state (already handled above)
+  // Load last selected agent when no explicit reset was requested.
+  useEffect(() => {
+    if (!availableAgents || availableAgents.length === 0) return;
     if (resetAssistant) return;
 
     let cancelled = false;
