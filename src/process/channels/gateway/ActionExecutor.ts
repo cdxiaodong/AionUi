@@ -6,6 +6,7 @@
 
 import type { TMessage } from '@/common/chat/chatLib';
 import type { TChatConversation } from '@/common/config/storage';
+import path from 'node:path';
 import { getDatabase } from '@process/services/database';
 import { ProcessConfig } from '@process/utils/initStorage';
 import { conversationServiceSingleton } from '@/process/services/conversationServiceSingleton';
