@@ -1206,6 +1206,7 @@ import type {
   IChannelSession,
   IChannelUser,
 } from '@process/channels/types';
+import type { CliSessionSummary } from '../types/cliSessionTypes';
 
 export const channel = {
   // Plugin Management
@@ -1249,6 +1250,13 @@ export const channel = {
     'channel.plugin-status-changed'
   ),
   userAuthorized: bridge.buildEmitter<IChannelUser>('channel.user-authorized'),
+};
+
+export const cliSession = {
+  listRecent: bridge.buildProvider<CliSessionSummary[], { limit?: number }>('cli-session.list-recent'),
+  importConversation: bridge.buildProvider<TChatConversation, { backend: 'claude' | 'codex'; sessionId: string }>(
+    'cli-session.import-conversation'
+  ),
 };
 
 // ==================== Agent Hub API ====================
