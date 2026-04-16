@@ -31,6 +31,7 @@ import path from 'path';
 import { getWindowsShellExecutionOptions } from '@process/utils/shellEnv';
 import { connectClaude, connectCodebuddy, connectCodex, prepareCleanEnv, spawnGenericBackend } from './acpConnectors';
 import type { SpawnResult } from './acpConnectors';
+import { createAcpProtocolError, parseAcpJsonRpcMessage } from '@process/agent/shared';
 import { killChild, readTextFile, writeJsonRpcMessage, writeTextFile } from './utils';
 
 const execFile = promisify(execFileCb);
@@ -379,20 +380,20 @@ export class AcpConnection {
 
       for (const line of lines) {
         if (line.trim()) {
-          try {
-            const handleStart = Date.now();
-            const message = JSON.parse(line) as AcpMessage;
-            this.handleMessage(message);
-            const handleDuration = Date.now() - handleStart;
-            if (handleDuration > 5) {
-              console.log(
-                `[ACP-PERF] stream: handleMessage ${handleDuration}ms method=${
-                  'method' in message ? (message as AcpIncomingMessage).method : 'response'
-                }`
-              );
-            }
-          } catch (error) {
-            // Ignore parsing errors for non-JSON messages
+          const handleStart = Date.now();
+          const message = parseAcpJsonRpcMessage(line);
+          if (!message) {
+            continue;
+          }
+
+          this.handleMessage(message);
+          const handleDuration = Date.now() - handleStart;
+          if (handleDuration > 5) {
+            console.log(
+              `[ACP-PERF] stream: handleMessage ${handleDuration}ms method=${
+                'method' in message ? (message as AcpIncomingMessage).method : 'response'
+              }`
+            );
           }
         }
       }
@@ -604,7 +605,8 @@ export class AcpConnection {
         });
       } else if ('id' in message && typeof message.id === 'number' && this.pendingRequests.has(message.id)) {
         // This is a response to a previous request
-        const { resolve, reject } = this.pendingRequests.get(message.id)!;
+        const pendingRequest = this.pendingRequests.get(message.id)!;
+        const { resolve, reject } = pendingRequest;
         this.pendingRequests.delete(message.id);
 
         if ('result' in message) {
@@ -624,8 +626,12 @@ export class AcpConnection {
           }
           resolve(message.result);
         } else if ('error' in message) {
-          const errorMsg = message.error?.message || 'Unknown ACP error';
-          reject(new Error(errorMsg));
+          reject(
+            createAcpProtocolError(message.error, {
+              backend: this.backend ?? undefined,
+              method: pendingRequest.method,
+            })
+          );
         }
       } else {
         // Unknown message format, ignore
