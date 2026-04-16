@@ -6,6 +6,7 @@
 
 import { acpDetector } from '@process/agent/acp/AcpDetector';
 import { AcpConnection } from '@process/agent/acp/AcpConnection';
+import { listLocalCliSessions } from '@process/agent/acp/utils';
 import { detectAionrs } from '@process/agent/aionrs/binaryResolver';
 import type { IWorkerTaskManager } from '@process/task/IWorkerTaskManager';
 import AcpAgentManager from '@process/task/AcpAgentManager';
@@ -166,6 +167,20 @@ export function initAcpConversationBridge(workerTaskManager: IWorkerTaskManager)
         success: false,
         msg: `${backend} health check failed: ${errorMsg}`,
         data: { available: false, error: errorMsg },
+      };
+    }
+  });
+
+  ipcBridge.acpConversation.listLocalSessions.provider(async ({ limit }) => {
+    try {
+      return {
+        success: true,
+        data: await listLocalCliSessions(limit ?? 8),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        msg: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   });

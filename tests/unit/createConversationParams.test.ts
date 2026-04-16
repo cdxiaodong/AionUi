@@ -30,7 +30,7 @@ vi.mock('@/common/utils/presetAssistantResources', () => ({
   loadPresetAssistantResources,
 }));
 
-const { buildPresetAssistantParams, buildCliAgentParams } =
+const { buildPresetAssistantParams, buildCliAgentParams, buildCliSessionResumeParams } =
   await import('../../src/renderer/pages/conversation/utils/createConversationParams');
 
 describe('createConversationParams', () => {
@@ -255,5 +255,22 @@ describe('createConversationParams', () => {
       'en'
     );
     expect(params.extra.backend).toBe('claude');
+  });
+
+  it('builds resume params for local CLI sessions', () => {
+    const params = buildCliSessionResumeParams({
+      backend: 'claude',
+      sessionId: 'session-123',
+      cwd: '/tmp/workspace',
+      title: 'Resume Claude session',
+      updatedAt: Date.now(),
+    });
+
+    expect(params.id).toBeTruthy();
+    expect(params.type).toBe('acp');
+    expect(params.name).toBe('Resume Claude session');
+    expect(params.extra.backend).toBe('claude');
+    expect(params.extra.acpSessionId).toBe('session-123');
+    expect(params.extra.acpSessionConversationId).toBe(params.id);
   });
 });

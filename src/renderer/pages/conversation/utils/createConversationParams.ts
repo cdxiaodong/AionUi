@@ -7,7 +7,8 @@
 import { ConfigStorage } from '@/common/config/storage';
 import type { ICreateConversationParams } from '@/common/adapter/ipcBridge';
 import type { TProviderWithModel } from '@/common/config/storage';
-import { resolveLocaleKey } from '@/common/utils';
+import type { LocalCliSession } from '@/common/types/acpTypes';
+import { resolveLocaleKey, uuid } from '@/common/utils';
 import { loadPresetAssistantResources } from '@/common/utils/presetAssistantResources';
 import {
   buildAgentConversationParams,
@@ -178,4 +179,27 @@ export async function buildPresetAssistantParams(
     },
     model,
   });
+}
+
+/**
+ * Build conversation params that resume a local CLI session in AionUI.
+ */
+export function buildCliSessionResumeParams(session: LocalCliSession): ICreateConversationParams & { id: string } {
+  const conversationId = uuid();
+
+  return {
+    ...buildAgentConversationParams({
+      backend: session.backend,
+      name: session.title,
+      agentName: session.backend === 'claude' ? 'Claude Code' : 'Codex',
+      workspace: session.cwd,
+      customWorkspace: true,
+      model: {} as TProviderWithModel,
+      extra: {
+        acpSessionId: session.sessionId,
+        acpSessionConversationId: conversationId,
+      } as Partial<ICreateConversationParams['extra']>,
+    }),
+    id: conversationId,
+  };
 }

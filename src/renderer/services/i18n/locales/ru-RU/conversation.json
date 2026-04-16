@@ -88,7 +88,11 @@
   },
   "dropdown": {
     "cliAgents": "CLI-агенты",
-    "presetAssistants": "Предустановленные ассистенты"
+    "presetAssistants": "Предустановленные ассистенты",
+    "cliSessions": "CLI Sessions",
+    "resumeCliSession": "Continue CLI Session",
+    "loadingCliSessions": "Loading sessions...",
+    "noCliSessions": "No local CLI sessions"
   },
   "noAgentsAvailable": "Нет доступных агентов",
   "noModelConfigured": "Модель не настроена. Настройте в параметрах.",

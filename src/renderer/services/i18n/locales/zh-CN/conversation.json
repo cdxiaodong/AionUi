@@ -88,7 +88,11 @@
   },
   "dropdown": {
     "cliAgents": "CLI Agents",
-    "presetAssistants": "预设助手"
+    "presetAssistants": "预设助手",
+    "cliSessions": "CLI 会话",
+    "resumeCliSession": "继续 CLI 会话",
+    "loadingCliSessions": "正在加载会话...",
+    "noCliSessions": "暂无本地 CLI 会话"
   },
   "noAgentsAvailable": "没有可用的 Agent",
   "noModelConfigured": "未配置模型，请前往设置页面配置。",

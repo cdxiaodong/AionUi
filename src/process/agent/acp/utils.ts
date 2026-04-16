@@ -6,6 +6,7 @@
 
 import type { ChildProcess } from 'child_process';
 import { execFile as execFileCb } from 'child_process';
+import type { LocalCliSession } from '@/common/types/acpTypes';
 import { promisify } from 'util';
 import * as fs from 'fs';
 import { promises as fsAsync } from 'fs';
@@ -263,6 +264,266 @@ export function getClaudeModelSlot(): 'default' | 'opus' | 'haiku' | null {
   const model = settings?.model?.trim().toLowerCase();
   if (model === 'sonnet') return 'default';
   return model === 'default' || model === 'opus' || model === 'haiku' ? model : null;
+}
+
+type CliSessionRoots = {
+  claudeProjectsDir?: string;
+  codexSessionsDir?: string;
+};
+
+type SessionFileCandidate = {
+  filePath: string;
+  mtimeMs: number;
+};
+
+const DISCOVERY_SCAN_LIMIT = 40;
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+function extractTextContent(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => extractTextContent(item))
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  const record = asRecord(value);
+  if (!record) return '';
+  if (typeof record.text === 'string') return record.text;
+  if ('content' in record) return extractTextContent(record.content);
+  return '';
+}
+
+function normalizeSessionTitle(text: string): string {
+  const normalized = text
+    .replace(/<local-command-caveat>[\s\S]*?<\/local-command-caveat>/g, ' ')
+    .replace(/<local-command-[^>]+>[\s\S]*?<\/local-command-[^>]+>/g, ' ')
+    .replace(/<command-[^>]+>[\s\S]*?<\/command-[^>]+>/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!normalized) return '';
+  if (normalized.length <= 80) return normalized;
+  return `${normalized.slice(0, 77)}...`;
+}
+
+function getSessionFallbackTitle(cwd: string, sessionId: string): string {
+  const trimmed = cwd.trim();
+  if (trimmed) {
+    const baseName = path.basename(trimmed);
+    if (baseName && baseName !== path.sep && baseName !== '.') {
+      return baseName;
+    }
+  }
+  return sessionId;
+}
+
+function extractUserTitle(record: Record<string, unknown>): string {
+  if (record.type === 'last-prompt' && typeof record.lastPrompt === 'string') {
+    return normalizeSessionTitle(record.lastPrompt);
+  }
+
+  if (record.isMeta === true || record.isSidechain === true) {
+    return '';
+  }
+
+  const message = asRecord(record.message);
+  if (!message || message.role !== 'user') {
+    return '';
+  }
+
+  return normalizeSessionTitle(extractTextContent(message.content));
+}
+
+async function collectJsonlCandidates(
+  rootDir: string,
+  options: { excludeSubagents?: boolean; limit: number }
+): Promise<SessionFileCandidate[]> {
+  if (!rootDir || !fs.existsSync(rootDir)) {
+    return [];
+  }
+
+  const candidates: SessionFileCandidate[] = [];
+  const stack = [rootDir];
+
+  while (stack.length > 0) {
+    const currentDir = stack.pop();
+    if (!currentDir) continue;
+
+    let entries: fs.Dirent[] = [];
+    try {
+      entries = await fsAsync.readdir(currentDir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      const fullPath = path.join(currentDir, entry.name);
+      if (options.excludeSubagents && fullPath.includes(`${path.sep}subagents${path.sep}`)) {
+        continue;
+      }
+
+      if (entry.isDirectory()) {
+        stack.push(fullPath);
+        continue;
+      }
+
+      if (!entry.isFile() || !entry.name.endsWith('.jsonl')) {
+        continue;
+      }
+
+      try {
+        const stat = await fsAsync.stat(fullPath);
+        candidates.push({ filePath: fullPath, mtimeMs: stat.mtimeMs });
+      } catch {
+        // Ignore files removed during scan.
+      }
+    }
+  }
+
+  return candidates.sort((left, right) => right.mtimeMs - left.mtimeMs).slice(0, options.limit);
+}
+
+async function parseCodexSessionCandidate(candidate: SessionFileCandidate): Promise<LocalCliSession | null> {
+  try {
+    const content = await fsAsync.readFile(candidate.filePath, 'utf-8');
+    const lines = content.split(/\r?\n/).filter(Boolean);
+    let sessionId = '';
+    let cwd = '';
+    let title = '';
+    let updatedAt = candidate.mtimeMs;
+
+    for (const line of lines) {
+      const record = asRecord(JSON.parse(line));
+      if (!record) continue;
+
+      if (record.type === 'session_meta') {
+        const payload = asRecord(record.payload);
+        if (payload) {
+          if (typeof payload.id === 'string') sessionId = payload.id;
+          if (typeof payload.cwd === 'string') cwd = payload.cwd;
+          if (typeof payload.timestamp === 'string') {
+            const parsed = Date.parse(payload.timestamp);
+            if (!Number.isNaN(parsed)) updatedAt = Math.max(updatedAt, parsed);
+          }
+        }
+      }
+
+      const nextTitle = extractUserTitle(record);
+      if (nextTitle) {
+        title = nextTitle;
+      }
+
+      if (typeof record.timestamp === 'string') {
+        const parsed = Date.parse(record.timestamp);
+        if (!Number.isNaN(parsed)) updatedAt = Math.max(updatedAt, parsed);
+      }
+    }
+
+    if (!sessionId) {
+      return null;
+    }
+
+    return {
+      backend: 'codex',
+      sessionId,
+      cwd,
+      title: title || getSessionFallbackTitle(cwd, sessionId),
+      updatedAt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function parseClaudeSessionCandidate(candidate: SessionFileCandidate): Promise<LocalCliSession | null> {
+  try {
+    const content = await fsAsync.readFile(candidate.filePath, 'utf-8');
+    const lines = content.split(/\r?\n/).filter(Boolean);
+    let sessionId = '';
+    let cwd = '';
+    let title = '';
+    let updatedAt = candidate.mtimeMs;
+
+    for (const line of lines) {
+      const record = asRecord(JSON.parse(line));
+      if (!record || record.isSidechain === true) continue;
+
+      if (!sessionId && typeof record.sessionId === 'string') {
+        sessionId = record.sessionId;
+      }
+      if (!cwd && typeof record.cwd === 'string') {
+        cwd = record.cwd;
+      }
+
+      const nextTitle = extractUserTitle(record);
+      if (!title && nextTitle) {
+        title = nextTitle;
+      }
+
+      if (typeof record.timestamp === 'string') {
+        const parsed = Date.parse(record.timestamp);
+        if (!Number.isNaN(parsed)) updatedAt = Math.max(updatedAt, parsed);
+      }
+    }
+
+    if (!sessionId) {
+      return null;
+    }
+
+    return {
+      backend: 'claude',
+      sessionId,
+      cwd,
+      title: title || getSessionFallbackTitle(cwd, sessionId),
+      updatedAt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Discover recent resumable CLI sessions from local Claude/Codex history files.
+ */
+export async function listLocalCliSessions(
+  limit = 8,
+  roots: CliSessionRoots = {
+    claudeProjectsDir: path.join(os.homedir(), '.claude', 'projects'),
+    codexSessionsDir: path.join(os.homedir(), '.codex', 'sessions'),
+  }
+): Promise<LocalCliSession[]> {
+  const [claudeCandidates, codexCandidates] = await Promise.all([
+    collectJsonlCandidates(roots.claudeProjectsDir || '', {
+      excludeSubagents: true,
+      limit: Math.max(limit, DISCOVERY_SCAN_LIMIT),
+    }),
+    collectJsonlCandidates(roots.codexSessionsDir || '', { limit: Math.max(limit, DISCOVERY_SCAN_LIMIT) }),
+  ]);
+
+  const sessions = (
+    await Promise.all([
+      ...claudeCandidates.map((candidate) => parseClaudeSessionCandidate(candidate)),
+      ...codexCandidates.map((candidate) => parseCodexSessionCandidate(candidate)),
+    ])
+  ).filter((session): session is LocalCliSession => Boolean(session));
+
+  const deduped = new Map<string, LocalCliSession>();
+  for (const session of sessions.sort((left, right) => right.updatedAt - left.updatedAt)) {
+    const dedupeKey = `${session.backend}:${session.sessionId}`;
+    if (!deduped.has(dedupeKey)) {
+      deduped.set(dedupeKey, session);
+    }
+  }
+
+  return Array.from(deduped.values())
+    .sort((left, right) => right.updatedAt - left.updatedAt)
+    .slice(0, Math.max(limit, 0));
 }
 
 // --- CodeBuddy settings support ---

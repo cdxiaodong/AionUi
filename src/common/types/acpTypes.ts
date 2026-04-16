@@ -21,6 +21,17 @@
 export type PresetAgentType = 'gemini' | 'claude' | 'codex' | 'codebuddy' | 'opencode' | 'qwen' | 'kiro' | 'aionrs';
 
 /**
+ * A resumable local CLI session discovered from supported agent history files.
+ */
+export type LocalCliSession = {
+  backend: 'claude' | 'codex';
+  sessionId: string;
+  cwd: string;
+  title: string;
+  updatedAt: number;
+};
+
+/**
  * 使用 ACP 协议的预设 Agent 类型（需要通过 ACP 后端路由）
  * Preset agent types that use ACP protocol (need to be routed through ACP backend)
  *

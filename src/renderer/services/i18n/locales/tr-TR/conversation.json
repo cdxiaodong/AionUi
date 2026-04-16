@@ -288,7 +288,11 @@
   },
   "dropdown": {
     "cliAgents": "CLI Agents",
-    "presetAssistants": "Preset Assistants"
+    "presetAssistants": "Preset Assistants",
+    "cliSessions": "CLI Sessions",
+    "resumeCliSession": "Continue CLI Session",
+    "loadingCliSessions": "Loading sessions...",
+    "noCliSessions": "No local CLI sessions"
   },
   "noAgentsAvailable": "No agents available",
   "noModelConfigured": "No model configured. Please configure in settings.",

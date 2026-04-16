@@ -4,7 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { ipcBridge } from '@/common';
 import { resolveLocaleKey } from '@/common/utils';
+import type { LocalCliSession } from '@/common/types/acpTypes';
 import { useAssistantBackends } from '@/renderer/hooks/assistant';
 import { useInputFocusRing } from '@/renderer/hooks/chat/useInputFocusRing';
 import { openExternalUrl, resolveExtensionAssetUrl } from '@/renderer/utils/platform';
@@ -26,15 +28,17 @@ import { useGuidMention } from './hooks/useGuidMention';
 import { useGuidModelSelection } from './hooks/useGuidModelSelection';
 import { useGuidSend } from './hooks/useGuidSend';
 import { useTypewriterPlaceholder } from './hooks/useTypewriterPlaceholder';
+import { buildCliSessionResumeParams } from '@/renderer/pages/conversation/utils/createConversationParams';
 import { ConfigStorage } from '@/common/config/storage';
 import { ACP_BACKENDS_ALL, type PresetAgentType } from '@/common/types/acpTypes';
 import { getAgentLogo } from '@/renderer/utils/model/agentLogo';
 import type { AcpBackendConfig } from './types';
 import { Button, ConfigProvider, Dropdown, Menu, Message } from '@arco-design/web-react';
-import { Down, Left, Robot, Write } from '@icon-park/react';
+import { Down, History, Left, Robot, Write } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
+import useSWR from 'swr';
 import styles from './index.module.css';
 
 const GuidPage: React.FC = () => {
@@ -138,6 +142,33 @@ const GuidPage: React.FC = () => {
     openTab,
     t,
   });
+
+  const { data: localCliSessions = [], isLoading: isLocalCliSessionsLoading } = useSWR(
+    'acp.local-cli-sessions',
+    async () => {
+      const result = await ipcBridge.acpConversation.listLocalSessions.invoke({ limit: 8 });
+      return result.success ? result.data : [];
+    }
+  );
+
+  const localCliSessionMap = useMemo(() => {
+    return new Map(localCliSessions.map((session) => [`${session.backend}:${session.sessionId}`, session]));
+  }, [localCliSessions]);
+
+  const handleResumeCliSession = useCallback(
+    async (session: LocalCliSession) => {
+      try {
+        const newConversation = await ipcBridge.conversation.create.invoke(buildCliSessionResumeParams(session));
+        closeAllTabs();
+        openTab(newConversation);
+        void navigate(`/conversation/${newConversation.id}`);
+      } catch (error) {
+        console.error('Failed to resume local CLI session:', error);
+        Message.error(t('conversation.createFailed'));
+      }
+    },
+    [closeAllTabs, navigate, openTab, t]
+  );
 
   // --- Coordinated handlers (depend on multiple hooks) ---
   const handleInputChange = useCallback(
@@ -465,6 +496,61 @@ const GuidPage: React.FC = () => {
     />
   );
 
+  const cliSessionMenuNode = (
+    <Dropdown
+      trigger='click'
+      position='bl'
+      droplist={
+        <Menu
+          className='min-w-260px'
+          onClickMenuItem={(key) => {
+            const session = localCliSessionMap.get(String(key));
+            if (!session) return;
+            void handleResumeCliSession(session);
+          }}
+        >
+          {isLocalCliSessionsLoading ? (
+            <Menu.Item key='loading' disabled>
+              {t('conversation.dropdown.loadingCliSessions')}
+            </Menu.Item>
+          ) : localCliSessions.length > 0 ? (
+            localCliSessions.map((session) => {
+              const logo = getAgentLogo(session.backend);
+              return (
+                <Menu.Item key={`${session.backend}:${session.sessionId}`}>
+                  <div className='flex items-start gap-8px max-w-300px'>
+                    {logo ? (
+                      <img src={logo} alt='' width={16} height={16} style={{ objectFit: 'contain', marginTop: 2 }} />
+                    ) : (
+                      <History theme='outline' size={16} style={{ marginTop: 2 }} />
+                    )}
+                    <div className='min-w-0 flex-1'>
+                      <div className='truncate text-13px text-t-primary'>{session.title}</div>
+                      <div className='truncate text-11px text-t-tertiary'>{session.cwd}</div>
+                    </div>
+                  </div>
+                </Menu.Item>
+              );
+            })
+          ) : (
+            <Menu.Item key='empty' disabled>
+              {t('conversation.dropdown.noCliSessions')}
+            </Menu.Item>
+          )}
+        </Menu>
+      }
+    >
+      <Button
+        type='text'
+        size='mini'
+        icon={<History theme='outline' size={14} />}
+        disabled={!isLocalCliSessionsLoading && localCliSessions.length === 0}
+      >
+        {t('conversation.dropdown.resumeCliSession')}
+      </Button>
+    </Dropdown>
+  );
+
   // Build the action row
   const actionRowNode = (
     <GuidActionRow
@@ -472,6 +558,7 @@ const GuidPage: React.FC = () => {
       onFilesUploaded={guidInput.handleFilesUploaded}
       onSelectWorkspace={(dir) => guidInput.setDir(dir)}
       modelSelectorNode={modelSelectorNode}
+      cliSessionNode={cliSessionMenuNode}
       selectedAgent={agentSelection.selectedAgent}
       effectiveModeAgent={agentSelection.currentEffectiveAgentInfo.agentType}
       selectedMode={agentSelection.selectedMode}
