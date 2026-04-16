@@ -32,7 +32,7 @@ import { getAgentLogo } from '@/renderer/utils/model/agentLogo';
 import type { AcpBackendConfig } from './types';
 import { Button, ConfigProvider, Dropdown, Menu, Message } from '@arco-design/web-react';
 import { Down, Left, Robot, Write } from '@icon-park/react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './index.module.css';
@@ -311,7 +311,7 @@ const GuidPage: React.FC = () => {
 
   // Reset UI state whenever the user navigates to /guid fresh
   // (agent selection is preserved via saved preference in useGuidAgentSelection)
-  useEffect(() => {
+  useLayoutEffect(() => {
     guidInput.setInput('');
     setIsDescriptionExpanded(false);
   }, [location.key]);
@@ -319,7 +319,7 @@ const GuidPage: React.FC = () => {
   // When sidebar "新对话" navigates with resetAssistant, exit any preset assistant
   // and return to the default (non-preset) homepage view.
   const resetAssistantRequested = (location.state as { resetAssistant?: boolean } | null)?.resetAssistant === true;
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!resetAssistantRequested) return;
     if (!agentSelection.availableAgents || agentSelection.availableAgents.length === 0) return;
     if (agentSelection.isPresetAgent) {
