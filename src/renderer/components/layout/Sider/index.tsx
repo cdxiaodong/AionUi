@@ -100,13 +100,16 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     void setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
     cleanupSiderTooltips();
     blurActiveElement();
     closePreview();
-    void logout().catch((error) => {
+    try {
+      await logout();
+    } catch (error) {
       console.error('Logout failed:', error);
-    });
+      return; // logout 失败时不执行后续操作
+    }
     if (onSessionClick) {
       onSessionClick();
     }
