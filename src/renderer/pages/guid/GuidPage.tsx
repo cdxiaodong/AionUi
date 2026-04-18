@@ -324,12 +324,7 @@ const GuidPage: React.FC = () => {
     if (!resetAssistantRequested) return;
     // Clear via history API so we don't bump location.key and re-trigger other effects.
     window.history.replaceState(null, '', `${location.pathname}${location.search}${location.hash}`);
-  }, [
-    resetAssistantRequested,
-    location.pathname,
-    location.search,
-    location.hash,
-  ]);
+  }, [resetAssistantRequested, location.pathname, location.search, location.hash]);
 
   useEffect(() => {
     const node = descriptionTextRef.current;
