@@ -14,4 +14,3 @@ export type CliSessionSummary = {
   updatedAt: number;
   conversationId?: string;
 };
-

@@ -147,6 +147,6 @@ describe('cliSessionService', () => {
     const sessions = await service.listRecentSessions(10);
 
     expect(sessions).toHaveLength(2);
-    expect(sessions.map((session) => session.backend).sort()).toEqual(['claude', 'codex']);
+    expect(sessions.map((session) => session.backend).toSorted()).toEqual(['claude', 'codex']);
   });
 });

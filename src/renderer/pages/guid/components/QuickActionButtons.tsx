@@ -318,21 +318,26 @@ const QuickActionButtons: React.FC<QuickActionButtonsProps> = ({
                         {session.backend === 'claude' ? 'Claude Code' : 'Codex'}
                       </span>
                     </div>
-                    {session.preview ? <div className='mb-6px text-12px text-t-secondary'>{session.preview}</div> : null}
+                    {session.preview ? (
+                      <div className='mb-6px text-12px text-t-secondary'>{session.preview}</div>
+                    ) : null}
                     <div className='text-12px text-t-tertiary'>
                       <span>
-                        {t('common.workspace')}: {session.workspace || t('guid.cliSessions.workspaceUnknown', { defaultValue: 'Unknown' })}
+                        {t('common.workspace')}:{' '}
+                        {session.workspace || t('guid.cliSessions.workspaceUnknown', { defaultValue: 'Unknown' })}
                       </span>
                     </div>
                     <div className='mt-4px text-12px text-t-tertiary'>
                       <span>
-                        {t('guid.cliSessions.lastActive', { defaultValue: 'Last Active' })}: {new Date(session.updatedAt).toLocaleString()}
+                        {t('guid.cliSessions.lastActive', { defaultValue: 'Last Active' })}:{' '}
+                        {new Date(session.updatedAt).toLocaleString()}
                       </span>
                     </div>
                     {!session.workspaceExists ? (
                       <div className='mt-4px text-12px text-[rgb(var(--danger-6))]'>
                         {t('guid.cliSessions.workspaceMissing', {
-                          defaultValue: 'Original workspace is unavailable. The session may resume with limited context.',
+                          defaultValue:
+                            'Original workspace is unavailable. The session may resume with limited context.',
                         })}
                       </div>
                     ) : null}

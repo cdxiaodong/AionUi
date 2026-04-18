@@ -182,7 +182,7 @@ export async function listClaudeCliSessionsFromProjectsDir(
   }
 
   const candidateFiles = sessionFiles
-    .sort((left, right) => right.updatedAt - left.updatedAt)
+    .toSorted((left, right) => right.updatedAt - left.updatedAt)
     .slice(0, Math.max(limit * MAX_CLAUDE_SCAN_MULTIPLIER, limit));
 
   const seeds = await Promise.all(
@@ -306,7 +306,9 @@ export class CliSessionService {
       this.listCodexSessions(limit),
     ]);
 
-    return [...claudeSessions, ...codexSessions].sort((left, right) => right.updatedAt - left.updatedAt).slice(0, limit);
+    return [...claudeSessions, ...codexSessions]
+      .toSorted((left, right) => right.updatedAt - left.updatedAt)
+      .slice(0, limit);
   }
 
   async findSession(backend: CliSessionBackend, sessionId: string): Promise<CliSessionSummary | null> {
