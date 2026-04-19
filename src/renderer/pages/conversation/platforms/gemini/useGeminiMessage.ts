@@ -235,7 +235,7 @@ export const useGeminiMessage = (conversation_id: string, onError?: (message: IR
                 totalTokens: finishedData.usageMetadata.totalTokenCount || 0,
                 inputTokens: finishedData.usageMetadata.promptTokenCount || 0,
                 outputTokens: finishedData.usageMetadata.candidatesTokenCount || 0,
-                cachedInputTokens: finishedData.usageMetadata.cachedContentTokenCount || 0,
+                cachedInputTokens: finishedData.usageMetadata.cachedContentTokenCount,
               };
               setTokenUsage(newTokenUsage);
               // Persist token usage stats to conversation's extra.lastTokenUsage field
