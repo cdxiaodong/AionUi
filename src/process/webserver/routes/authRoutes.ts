@@ -318,7 +318,7 @@ export function registerAuthRoutes(app: Express): void {
           return;
         }
 
-        if (typeof req.cookies?.[AUTH_CONFIG.COOKIE.NAME] === 'string') {
+        if (!bodyToken && typeof req.cookies?.[AUTH_CONFIG.COOKIE.NAME] === 'string') {
           res.cookie(AUTH_CONFIG.COOKIE.NAME, newToken, {
             ...getCookieOptions(),
             maxAge: AUTH_CONFIG.TOKEN.COOKIE_MAX_AGE,

@@ -169,6 +169,7 @@ describe('registerAuthRoutes refresh endpoint', () => {
   });
 
   it('rotates the session cookie when a cookie-backed session refresh succeeds', async () => {
+    mockExtractFromRequest.mockReturnValue('current-token');
     mockRefreshToken.mockResolvedValue('new-token');
 
     const { registerAuthRoutes } = await import('@process/webserver/routes/authRoutes');
@@ -177,9 +178,7 @@ describe('registerAuthRoutes refresh endpoint', () => {
 
     const handler = getRefreshHandler(app);
     const req = {
-      body: {
-        token: 'current-token',
-      },
+      body: {},
       cookies: {
         'auth-token': 'current-token',
       },
